@@ -1,0 +1,1303 @@
+<!doctype html>
+<html lang="en" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORCA – prototype</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>/* STYLES. Colours are set once in :root (light mode) and again in [data-theme="dark"] (dark mode). Every colour in the page uses these variables, so switching mode changes everything at once. Sections below: layout, cards, buttons, tables, forms, steps, dashboard, events, side panel. */
+:root{color-scheme:light;--bg:#f4f6fb;--bg2:#e9eef7;--card:rgba(255,255,255,.86);--solid:#ffffff;--ink:#0b1222;--ink2:#334155;--mute:#64748b;--line:rgba(15,23,42,.08);--line2:rgba(15,23,42,.15);
+--accent:#0f766e;--accent2:#14b8a6;--accent-soft:#d9f5f1;--on-accent:#ffffff;--onAccentRing:rgba(15,118,110,.35);
+--ok:#047857;--okb:#d1fae5;--warn:#92400e;--warnb:#fef3c7;--bad:#b91c1c;--badb:#fee2e2;--tint:#f8fafc;
+--shadow:0 1px 2px rgba(15,23,42,.05),0 22px 44px -26px rgba(15,23,42,.28);
+--topA:#0b1222;--topB:#16263d;--glow1:#c9ecf1;--glow2:#dfe6fb;--c1:#0f9a6c;--c2:#e3a82b;--c3:#14a9c2;--c4:#7f93a6;--c5:#cf5f50}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#070d19;--bg2:#0c1628;--card:rgba(17,26,44,.78);--solid:#111a2c;--ink:#e6edf7;--ink2:#c3cfe0;--mute:#8a9ab3;--line:rgba(148,163,184,.13);--line2:rgba(148,163,184,.24);
+--accent:#2dd4bf;--accent2:#5eead4;--accent-soft:rgba(45,212,191,.14);--on-accent:#04211d;--onAccentRing:rgba(45,212,191,.35);
+--ok:#34d399;--okb:rgba(52,211,153,.14);--warn:#fbbf24;--warnb:rgba(251,191,36,.14);--bad:#f87171;--badb:rgba(248,113,113,.14);--tint:rgba(148,163,184,.06);
+--shadow:0 1px 2px rgba(0,0,0,.4),0 24px 48px -28px rgba(0,0,0,.7);
+--topA:#050a14;--topB:#0b1424;--glow1:#0f2a3a;--glow2:#1b1d3d;--c1:#34d399;--c2:#fbbf24;--c3:#22d3ee;--c4:#94a3b8;--c5:#f87171}
+*{box-sizing:border-box}
+body{margin:0;font:400 14.5px/1.5 Figtree,system-ui,-apple-system,sans-serif;color:var(--ink);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;
+background:radial-gradient(1000px 600px at -5% -10%,var(--glow1) 0%,transparent 60%),radial-gradient(900px 560px at 105% 0%,var(--glow2) 0%,transparent 55%),var(--bg);transition:background .3s,color .3s}
+.top{display:flex;align-items:center;gap:16px;padding:0 24px;height:62px;background:linear-gradient(110deg,var(--topA),var(--topB));color:#e8f4f8;border-bottom:1px solid rgba(255,255,255,.06)}
+.logo{font-weight:800;font-size:16px;letter-spacing:5px;display:flex;align-items:center;gap:10px}
+.logo:before{content:"";width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--accent2),var(--accent));box-shadow:0 0 18px rgba(45,212,191,.45)}
+.ev{color:#8ea9b8;font-size:13px}
+.test{background:rgba(251,191,36,.14);color:#fcd683;border:1px solid rgba(251,191,36,.3);border-radius:99px;padding:3px 12px;font-size:12px;font-weight:600}
+#rolebar{margin-left:auto;display:flex;align-items:center;gap:12px}
+.role{display:flex;gap:10px;align-items:center;font-size:12px;color:#8ea9b8}
+.top .seg{background:rgba(255,255,255,.08)}
+.top .seg button{color:#a9c0cc}
+.top .seg button.on{background:#fff;color:#0b1222}
+.theme{font:600 12.5px Figtree,system-ui,sans-serif;color:#dbe7ee;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:6px 12px;cursor:pointer}
+.theme:hover{background:rgba(255,255,255,.14)}
+.shell{display:flex;height:calc(100vh - 62px)}
+#nav{width:240px;background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-right:1px solid var(--line);overflow:auto;padding:18px 14px;display:flex;flex-direction:column}
+#nav h3{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:20px 12px 6px;font-weight:700}
+#nav h3:first-child{margin-top:0}
+#nav button{display:flex;width:100%;align-items:center;text-align:left;border:0;background:none;padding:9px 12px;margin:2px 0;font:500 14px Figtree,system-ui,sans-serif;cursor:pointer;color:var(--ink2);border-radius:11px;transition:background .15s,color .15s}
+#nav button:hover{background:var(--accent-soft)}
+#nav button.on{background:var(--accent-soft);color:var(--accent);font-weight:700;box-shadow:inset 3px 0 0 var(--accent)}
+.navfoot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line)}
+.navfoot .me{display:flex;align-items:center;gap:10px;padding:6px 10px 12px}
+.navfoot .av{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:var(--on-accent);display:grid;place-items:center;font-weight:800;font-size:12.5px;flex:none}
+.navfoot .mn1{font-weight:700;font-size:13.5px}
+.navfoot .so{display:block;width:100%;border:1px solid var(--line2);background:var(--solid);border-radius:11px;padding:8px 12px;font:600 13.5px Figtree,system-ui,sans-serif;color:var(--ink2);cursor:pointer;text-align:center}
+.navfoot .so:hover{background:var(--tint)}
+#main{flex:1;overflow:auto;padding:30px 42px 80px}
+#main h1{font-size:30px;font-weight:800;letter-spacing:-.03em;margin:2px 0 18px}
+.seg{display:inline-flex;background:var(--tint);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:6px 14px;border-radius:9px;color:var(--mute);font:600 13px Figtree,system-ui,sans-serif;cursor:pointer}
+.seg button.on{background:var(--solid);color:var(--ink);box-shadow:var(--shadow)}
+.box,.card{background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:20px;padding:24px 26px;margin-bottom:18px;box-shadow:var(--shadow)}
+.how{background:var(--accent-soft);border-color:transparent;color:var(--ink2);font-size:14px;box-shadow:none;display:flex;gap:12px;align-items:flex-start}
+.how:before{content:"i";flex:none;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:800 12px/22px Figtree,sans-serif;text-align:center;margin-top:1px}
+.how b{color:var(--accent)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));gap:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.stat{background:var(--solid);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow)}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.num{font-size:32px;font-weight:800;letter-spacing:-.035em;line-height:1.1;margin-top:8px;color:var(--ink)}
+.sub{font-size:12.5px;color:var(--mute);margin-top:5px}
+.small{font-size:13px;color:var(--mute)}
+.h2{font-size:15.5px;font-weight:700;margin:0 0 12px;letter-spacing:-.01em}
+button.b,button.p,button.d{font:600 14px Figtree,system-ui,sans-serif;border-radius:12px;padding:9px 18px;border:1px solid var(--line2);background:var(--solid);color:var(--ink);cursor:pointer;transition:transform .12s,box-shadow .12s,background .15s;box-shadow:0 1px 2px rgba(15,23,42,.06)}
+button.b:hover{background:var(--tint)}
+button.p{background:linear-gradient(180deg,var(--accent2),var(--accent));border-color:transparent;color:var(--on-accent);box-shadow:0 8px 18px -10px var(--onAccentRing)}
+button.d{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+button:not(:disabled):hover{transform:translateY(-1px)}
+button:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;transform:none}
+button.lock{opacity:.55}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--onAccentRing);outline-offset:2px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;border:1px solid var(--line2);border-radius:99px;padding:3px 11px;margin:2px;background:var(--solid);cursor:pointer;color:var(--ink2);white-space:nowrap}
+.chip .c{color:var(--mute);font-weight:600}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.on .c{color:var(--mute)}
+.chip.g{background:var(--okb);border-color:transparent;color:var(--ok);cursor:default}
+.chip.a{background:var(--warnb);border-color:transparent;color:var(--warn);cursor:default}
+.chip.r{background:var(--badb);border-color:transparent;color:var(--bad);cursor:default}
+.chip.bl{background:var(--accent-soft);border-color:transparent;color:var(--accent);cursor:default}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);padding:11px 10px;border-bottom:1px solid var(--line2)}
+td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr.tot td{font-weight:700;border-top:1px solid var(--line2)}
+.tblwrap{max-height:540px;overflow:auto}
+.tblwrap th{position:sticky;top:0;background:var(--solid);z-index:1}
+input,select,textarea{font:inherit;padding:10px 13px;border-radius:12px;border:1px solid var(--line2);background:var(--solid);color:var(--ink);max-width:100%}
+textarea{width:100%;min-height:100px;resize:vertical;line-height:1.55}
+label{font-size:13.5px;color:var(--ink2);display:inline-flex;align-items:center;gap:9px}
+label input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent)}
+.drop{border:1.5px dashed var(--onAccentRing);background:var(--accent-soft);border-radius:18px;padding:48px 18px;text-align:center;color:var(--mute)}
+.drop p{margin:6px 0}
+.bar{height:9px;border-radius:99px;background:var(--line);overflow:hidden;display:flex;margin:12px 0 6px}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+.bl-row{display:flex;align-items:center;gap:12px;margin:10px 0;font-size:13.5px}
+.bl-row .t{width:110px;color:var(--ink2)}
+.bl-row .track{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bl-row .track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+.bl-row .v{width:40px;text-align:right;font-weight:700}
+.att{display:flex;align-items:center;gap:14px;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--line)}
+.att:last-child{border-bottom:0}
+.iss{border:1px solid var(--line2);border-radius:16px;padding:15px 17px;margin-bottom:10px;background:var(--solid)}
+.msg{background:var(--tint);border:1px solid var(--line);border-radius:16px;padding:12px 16px;margin:9px 0;max-width:80%}
+.msg.me{background:var(--accent-soft);border-color:transparent;margin-left:auto}
+.photo{display:inline-flex;align-items:center;justify-content:center;width:160px;height:100px;background:linear-gradient(135deg,var(--accent-soft),var(--tint));border-radius:16px;font-size:12.5px;color:var(--mute);cursor:pointer;margin:6px 0;border:1px solid var(--line)}
+.preview{background:var(--solid);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow)}
+.preview p{margin:10px 0}
+.mockphoto{height:96px;background:linear-gradient(135deg,var(--accent-soft),var(--tint));border-radius:14px;margin:10px 0;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12.5px}
+.steps{display:flex;gap:12px;margin:0 0 24px;list-style:none;padding:0;overflow-x:auto}
+.steps li{flex:1;min-width:150px;display:flex;align-items:center;gap:10px;padding-top:14px;border-top:3px solid var(--line2);color:var(--mute);font-size:13.5px;font-weight:600}
+.steps li[onclick]{cursor:pointer}
+.steps .n{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:var(--solid);border:1.5px solid var(--line2);font-size:12.5px;font-weight:800;flex:none}
+.steps li.on{border-top-color:var(--accent)}
+.steps li.on{color:var(--ink)}
+.steps li.on .n{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.steps li.done{border-top-color:var(--ok);color:var(--ok)}
+.steps li.done .n{background:var(--ok);border-color:var(--ok);color:var(--solid)}
+.gi{padding:13px;border-radius:14px;cursor:pointer;margin-bottom:4px}
+.gi:hover{background:var(--tint)}
+.gi.on{background:var(--solid);box-shadow:var(--shadow)}
+.rp{padding:13px;border-radius:14px;cursor:pointer;margin-bottom:4px}
+.rp:hover{background:var(--tint)}
+.rp.on{background:var(--solid);box-shadow:var(--shadow)}
+.addp{background:var(--tint);border:1px solid var(--line2);border-radius:16px;padding:18px;margin:12px 0}
+.tint.g{background:var(--okb)}
+.tint.b{background:var(--accent-soft)}
+.tint.r{background:var(--badb)}
+.tint.a{background:var(--warnb)}
+.tint{border-radius:16px;padding:16px 18px;margin-top:12px}
+.scrim{position:fixed;inset:62px 0 0 0;background:rgba(2,6,23,.35);backdrop-filter:blur(2px);z-index:9}
+.pn{position:fixed;top:62px;right:0;bottom:0;width:min(470px,92vw);background:var(--solid);z-index:10;box-shadow:-30px 0 60px -30px rgba(0,0,0,.45);padding:26px 28px;overflow:auto;border-left:1px solid var(--line)}
+.pn-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.tl{border-left:2px solid var(--line2);margin-left:6px;padding-left:20px}
+.tli{position:relative;padding:0 0 16px}
+.tli .dot{position:absolute;left:-27px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:3px solid var(--solid)}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 22px;border-radius:14px;display:none;box-shadow:0 14px 34px rgba(0,0,0,.3);font-size:14px;z-index:20;font-weight:600}
+.tick{width:58px;height:58px;border-radius:50%;background:var(--okb);color:var(--ok);display:grid;place-items:center;margin:0 auto;font-size:27px;font-weight:800}
+.login{min-height:70vh}
+.login .box{border-radius:24px}
+.err{color:var(--bad);font-size:13px;margin:8px 0;font-weight:600}
+.login a{color:var(--accent);font-size:13px;font-weight:700;text-decoration:none}
+
+.eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+#nav button:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--line2);margin-right:11px;flex:none}
+#nav button.on:before{background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.stat{position:relative;overflow:hidden}
+.stat:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));opacity:.9}
+.box{transition:box-shadow .2s}
+.box:hover{box-shadow:var(--shadow),0 0 0 1px var(--line2) inset}
+tr:hover td{background:var(--tint)}
+
+/* dashboard */
+.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 20px}
+.hh{margin:0 0 6px!important;font-size:30px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:18px}
+.kpi{padding:20px 22px}
+.kicon{width:36px;height:36px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;margin-bottom:12px}
+.donut{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-top:6px}
+.donut svg{flex:none;overflow:visible}
+.donut .dn{font:800 30px Figtree,system-ui,sans-serif;fill:var(--ink);text-anchor:middle;letter-spacing:-.03em}
+.donut .ds{font:600 11px Figtree,system-ui,sans-serif;fill:var(--mute);text-anchor:middle;text-transform:uppercase;letter-spacing:.1em}
+.legend{flex:1;min-width:190px;display:grid;gap:4px}
+.lg{display:grid;grid-template-columns:12px 1fr auto 46px;align-items:center;gap:10px;font-size:13.5px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.lg:last-child{border-bottom:0}
+.lg .dot{width:10px;height:10px;border-radius:4px}
+.lg .v{font-weight:800}
+.lg .pc{color:var(--mute);font-size:12.5px;text-align:right}
+.ring{display:flex;align-items:center;gap:22px;margin:12px 0 6px;flex-wrap:wrap}
+.ring svg{flex:none;overflow:visible}
+.ring .rt{font:800 22px Figtree,system-ui,sans-serif;fill:var(--ink);text-anchor:middle;letter-spacing:-.02em}
+.ring .big{font-size:14px;color:var(--ink2);font-weight:600;max-width:240px}
+.empty{text-align:center;padding:30px 12px 16px}
+.eico{width:54px;height:54px;border-radius:50%;background:var(--okb);color:var(--ok);display:grid;place-items:center;margin:0 auto 12px;font-size:24px;font-weight:800}
+.empty b{display:block;font-size:16px;color:var(--ink)}
+.empty p{margin:6px auto 0;max-width:340px;color:var(--mute);font-size:13.5px}
+
+.evgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;margin-bottom:22px}
+.ev-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+.ev-card.arch{opacity:.7}
+.mini{background:var(--solid);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.mini b{display:block;font-size:20px;margin-top:4px}
+.fl{display:flex;flex-direction:column;align-items:stretch;gap:6px;font-size:13px;color:var(--mute);font-weight:600}
+.fl input,.fl select,.fl textarea{width:100%}
+.evbox{background:var(--accent-soft);border-radius:16px;padding:14px;margin:0 0 12px}
+.evname{font-weight:800;font-size:15px;margin-top:2px}
+.navfoot .av{font-size:12px}
+</style></head>
+<body>
+<!-- ORCA prototype (full view). Structure: top bar (logo, test mode pill, event name, role and theme switch), sidebar (event, pages, sign out), main area (the current page). Data is saved in the browser. The script at the bottom holds all the logic; each function has a comment above it. -->
+<header class="top"><span class="logo">ORCA</span><span class="test" id="testPill">Test mode · no real messages</span><span class="ev">Tech Fest 2026 · 14 Nov</span><span id="rolebar"></span></header>
+<div class="shell" id="shellEl"><nav id="nav"></nav><main id="main"></main></div>
+<div id="overlay"></div>
+<div class="toast" id="toast"></div>
+<script>
+// DATA: the sample numbers. RAW holds the 50 Tech Fest contacts (one array per person: id, name, college, reach, status, failed flag, confidence, time, reply, photo, FAQ topic). TEAM_PEOPLE holds the Tech Fest team figures.
+/* 50 contacts for the volunteer (Advaith). Every number on every page is computed from these rows.
+   fields: [id, name, college, reach, status, failed, confidence, reply time, reply text, has photo, faq topic]
+   reach: B = WhatsApp + Email, W = WhatsApp only, E = Email only, N = neither
+   status: I Interested, Q Question, U Undecided, D Declined, O Opted out (replied STOP), - no reply yet */
+var RAW=[
+[1,"Rahul Sharma","IIT Madras","B","I",0,94,"11:05","Yes, I’m interested! Please share the rulebook.",0,""],
+[2,"Priya Nair","NIT Trichy","B","I",0,91,"10:12","Sounds good. Can we register as a team of two?",0,""],
+[3,"Sneha Iyer","VIT","B","I",0,96,"11:07","Count me in. Here is my college ID.",1,""],
+[4,"Divya Menon","IIT Madras","B","I",0,88,"09:30","Interested. Please add me to the list.",0,""],
+[5,"Kavya Iyer","SSN","B","I",0,93,"14:20","Yes, please keep me posted.",0,""],
+[6,"Dev Patel","SRM","B","I",0,90,"16:45","Interested! Send me the schedule.",0,""],
+[7,"Ishaan Verma","IIT Hyderabad","W","I",0,89,"12:40","Yes, I want to join.",0,""],
+[8,"Lakshmi Rao","PSG Tech","W","I",0,92,"13:05","I’m interested, count me in.",0,""],
+[9,"Nikhil Joseph","Anna University","E","I",0,87,"15:10","Interested. Please share more details.",0,""],
+[10,"Karthik Raman","Anna University","B","Q",0,92,"10:40","Is there an entry fee to attend?",0,"fee"],
+[11,"Ananya Das","Amrita","B","Q",0,90,"11:50","Where is the venue exactly?",0,"venue"],
+[12,"Vignesh Kumar","SRM","B","Q",0,88,"12:55","Can I bring a friend along?",0,"friend"],
+[13,"Pooja Hegde","Christ University","W","Q",0,85,"15:30","Is accommodation provided for outstation students?",0,"accommodation"],
+[14,"Aditya Shah","BITS Pilani","B","U",0,58,"09:50","Maybe, I need to check with my team first.",0,""],
+[15,"Ritika Bose","Jadavpur University","B","U",0,55,"17:05","Let me see if my exams allow it.",0,""],
+[16,"Sanjay Pillai","IIT Bombay","E","U",0,61,"18:20","Not sure yet, it depends on the dates.",0,""],
+[17,"Megha Krishnan","Loyola","B","D",0,97,"08:40","Not this time, thanks.",0,""],
+[18,"Aarav Mehta","SRM","W","O",0,99,"10:58","STOP",0,""],
+[19,"Harini Sundar","IIT Madras","B","-",1,0,"","",0,""],
+[20,"Rohan Gupta","NIT Calicut","B","-",0,0,"","",0,""],
+[21,"Ayesha Khan","VIT","B","-",0,0,"","",0,""],
+[22,"Tarun Reddy","IIT Madras","B","-",0,0,"","",0,""],
+[23,"Shreya Nair","PSG Tech","B","-",0,0,"","",0,""],
+[24,"Manish Yadav","Anna University","B","-",0,0,"","",0,""],
+[25,"Gayathri Iyer","Amrita","B","-",0,0,"","",0,""],
+[26,"Siddharth Jain","SRM","B","-",0,0,"","",0,""],
+[27,"Neha Kulkarni","BITS Pilani","B","-",0,0,"","",0,""],
+[28,"Farhan Ali","Jamia Millia Islamia","B","-",1,0,"","",0,""],
+[29,"Ritu Sharma","DTU","B","-",0,0,"","",0,""],
+[30,"Varun Mishra","IIT Kharagpur","B","-",0,0,"","",0,""],
+[31,"Anjali Thomas","Christ University","B","-",0,0,"","",0,""],
+[32,"Kiran Bala","Osmania University","B","-",0,0,"","",0,""],
+[33,"Harsh Vardhan","IIT Roorkee","B","-",0,0,"","",0,""],
+[34,"Nandini Rao","NIT Warangal","B","-",0,0,"","",0,""],
+[35,"Arjun Mehta","VIT","B","-",0,0,"","",0,""],
+[36,"Sowmya Ramesh","SASTRA","B","-",0,0,"","",0,""],
+[37,"Pranav Joshi","IIIT Hyderabad","B","-",0,0,"","",0,""],
+[38,"Tanvi Desai","IIT Bombay","W","-",0,0,"","",0,""],
+[39,"Yash Malhotra","Thapar","W","-",0,0,"","",0,""],
+[40,"Ira Banerjee","Presidency College","W","-",0,0,"","",0,""],
+[41,"Rakesh Naidu","VIT Vellore","W","-",0,0,"","",0,""],
+[42,"Sana Qureshi","JNU","W","-",0,0,"","",0,""],
+[43,"Mohit Agarwal","IIT Delhi","E","-",0,0,"","",0,""],
+[44,"Lavanya Subramanian","PSG Tech","E","-",0,0,"","",0,""],
+[45,"Ashwin Krishnan","Anna University","E","-",0,0,"","",0,""],
+[46,"Ritika Nambiar","Amrita","E","-",0,0,"","",0,""],
+[47,"Deepa Chandran","Kerala University","N","-",0,0,"","",0,""],
+[48,"Suresh Babu","Madras University","N","-",0,0,"","",0,""],
+[49,"Pallavi Singh","Delhi University","N","-",0,0,"","",0,""],
+[50,"Gautam Rao","Osmania University","N","-",0,0,"","",0,""]
+];
+var FAILWHY={19:"Bad email address",28:"Bounced"};
+/* Team totals = sum of each volunteer's own numbers (static in the team view) */
+var TEAM_PEOPLE=[
+ {name:"Advaith Reddy",role:"Volunteer",contacts:50,sent:45,delivered:43,failed:2,queued:0,replies:18,I:9,Q:4,U:3,D:1,O:1},
+ {name:"Meera Pillai",role:"Coordinator",contacts:500,sent:466,delivered:432,failed:9,queued:25,replies:110,I:45,Q:25,U:18,D:14,O:8},
+ {name:"Joel Thomas",role:"Volunteer",contacts:450,sent:400,delivered:380,failed:5,queued:15,replies:86,I:32,Q:22,U:17,D:10,O:5}
+];
+
+// CORE: globals, the number calculations used across screens, shared helpers (toast, go, steps), and the dashboard building blocks (donut, ring, KPI cards). Later files override some of these.
+var $=function(i){return document.getElementById(i)};
+var rows=RAW.map(function(r){return {replied:r[4]!=="-",id:r[0],name:r[1],col:r[2],reach:r[3],st:r[4],fail:r[5]===1,conf:r[6],time:r[7],txt:r[8],photo:r[9]===1,topic:r[10],opt:r[4]==='O',excl:false,ph:"+91 9"+String(100000000+r[0]*3137).slice(0,9),em:r[1].toLowerCase().replace(/[^a-z]+/g,".").replace(/^\.|\.$/g,"")+"@students.edu"}});
+// Finds one contact in the current event by its ID.
+function R(id){for(var i=0;i<rows.length;i++)if(rows[i].id===id)return rows[i];return null}
+var LABEL={I:"Interested",Q:"Question",U:"Undecided",D:"Declined",O:"Opted out","-":"No reply yet"};
+var REACHTXT={B:"WhatsApp + Email",W:"WhatsApp only",E:"Email only",N:"No channel"};
+var R1ids=rows.filter(function(r){return ["B","W","E"].indexOf(r.reach)>=0&&!r.opt}).map(function(r){return r.id});
+var S={view:"S1",loggedIn:false,auth:{mode:"login",err:"",show:false},role:"Volunteer",scope:"mine",
+ camps:[{id:"R1",name:"Round 1 outreach",ch:"Both",ids:R1ids,fails:[19,28],pending:[],state:"done",when:"23 Oct, 10:20"}],
+ groups:[],members:{},ctab:"All",sel:{},cpanel:null,addOpen:false,
+ inboxId:null,inboxTab:"All",answered:{},answers:{},sugSent:{},
+ faq:[{q:"Is there an entry fee?",a:"Free for all students. Registration is needed.",topic:"fee",status:"Approved"},{q:"Where is the venue?",a:"Main auditorium, Block C, IIT Madras.",topic:"venue",status:"Approved"},{q:"Can I bring a friend?",a:"Each person must register separately.",topic:"friend",status:"Approved"},{q:"Is accommodation provided?",a:"Waiting for the organisers’ answer.",topic:"accommodation",status:"Draft"}],
+ faqQ:"",faqA:"",
+ aud:null,ch:null,subj:"Join us at Tech Fest 2026",txt:"Hi {{Name}}, we are inviting students from {{College}} to join {{EventName}} on 14 November. Register here: {{RegistrationLink}}",photo:false,
+ prev:0,sendI:0,checked:false,typed:"",
+ imp:{step:0,dec:{},consent:false,done:false},
+ hist:{},log:[
+  {t:"10:20",k:"Send",txt:"Round 1 outreach · 45 messages sent · 43 delivered · 2 failed",by:"Advaith"},
+  {t:"10:58",k:"Opt-out",txt:"Aarav Mehta replied STOP · opted out",by:"System"}
+ ],logTab:"All",campTab:"All",faqSaved:[]};
+rows.forEach(function(r){if(r.txt)S.log.push({t:r.time,k:"Reply",txt:r.name+" · "+LABEL[r.st]+(r.conf?" ("+r.conf+"% sure)":""),by:"Contact"})});
+S.log.sort(function(a,b){return a.t<b.t?-1:1});
+
+/* ---------- derived numbers (all computed) ---------- */
+// True if a person can be reached on the chosen channel (WhatsApp, Email or Both).
+function reachOK(r,ch){if(r.reach==="N")return false;if(!ch||ch==="Both")return true;if(ch==="WhatsApp")return r.reach==="B"||r.reach==="W";return r.reach==="B"||r.reach==="E"}
+// Returns the people in an audience: a group, or one person picked from Contacts.
+function membersOf(a){
+ if(!a)return [];
+ if(a.type==="person")return rows.filter(function(r){return r.id===a.id});
+ if(a.key==="all")return rows;
+ if(a.key==="interested")return rows.filter(function(r){return r.st==="I"});
+ if(a.key==="notreplied")return rows.filter(function(r){return r.st==="-"});
+ var ids=S.members[a.key]||[];return rows.filter(function(r){return ids.indexOf(r.id)>=0});
+}
+// Counts an audience: who is included, and who is left out and why (opted out, excluded, no channel).
+function audStats(a,ch){
+ var m=membersOf(a),o={total:m.length,opt:0,excl:0,noch:0,other:0,receive:[]};
+ m.forEach(function(r){if(r.opt){o.opt++;return}if(r.excl){o.excl++;return}if(r.reach==="N"){o.noch++;return}if(ch&&!reachOK(r,ch)){o.other++;return}o.receive.push(r)});
+ o.left=o.total-o.receive.length;return o;
+}
+// Totals across campaigns: messaged, failed and delivered.
+function campStats(){var s=0,f=0;S.camps.forEach(function(c){s+=c.ids.length-(c.pending||[]).length;f+=c.fails.length});return {sent:s,failed:f,delivered:s-f}}
+// Number of people who have actually replied (includes STOP replies).
+function replies(){return rows.filter(function(r){return r.replied}).length}
+// Number of replies with a given label (I, Q, U, D or O).
+function repCnt(st){return rows.filter(function(r){return r.replied&&r.st===st}).length}
+// Number of contacts with a given status, whether or not they replied.
+function cnt(st){return rows.filter(function(r){return r.st===st}).length}
+// Replies that are questions and still have no answer.
+function qWaiting(){return rows.filter(function(r){return r.replied&&r.st==="Q"&&!S.answered[r.id]})}
+// Every message that failed, with its campaign.
+function failedList(){var out=[];S.camps.forEach(function(c){c.fails.forEach(function(id){out.push({id:id,camp:c})})});return out}
+function cSent(c){return c.ids.length-(c.pending||[]).length}
+function cDel(c){return cSent(c)-c.fails.length}
+// Percentage rounded to a whole number. Returns 0 when the total is 0.
+function pct(a,b){return b?Math.round(a*100/b):0}
+// The groups shown on the Groups page: three built-in smart groups plus groups made by people.
+function allGroups(){return [{key:"all",name:"All contacts",kind:"Smart",rule:"Everyone imported",n:rows.length},{key:"interested",name:"Interested participants",kind:"Smart",rule:"Status is Interested",n:cnt("I")},{key:"notreplied",name:"Not replied yet",kind:"Smart",rule:"Status is No reply yet",n:rows.filter(function(r){return r.st==="-"}).length}].concat(S.groups.map(function(g){return {key:g.key,name:g.name,kind:"Static",rule:"Chosen by hand",n:(S.members[g.key]||[]).length}}))}
+function groupName(k){var g=allGroups().filter(function(x){return x.key===k})[0];return g?g.name:k}
+function audLabel(a){if(!a)return "Nothing chosen yet";if(a.type==="person")return R(a.id).name+" (chosen from Contacts)";return groupName(a.key)}
+function reachChips(s){return '<span class="chip g">Both <span class="c">'+s.both+'</span></span><span class="chip bl">WhatsApp only <span class="c">'+s.wa+'</span></span><span class="chip bl">Email only <span class="c">'+s.em+'</span></span><span class="chip r">No channel <span class="c">'+s.none+'</span></span>'}
+function reachCount(list){var o={both:0,wa:0,em:0,none:0};list.forEach(function(r){if(r.opt)return;if(r.reach==="B")o.both++;else if(r.reach==="W")o.wa++;else if(r.reach==="E")o.em++;else o.none++});return o}
+function chipFor(st){var c=st==="I"?"g":st==="Q"||st==="U"?"a":st==="O"?"r":"";return '<span class="chip '+c+'">'+LABEL[st]+'</span>'}
+// Adds a line to the activity log.
+function logEv(k,txt){S.log.unshift({t:"now",k:k,txt:txt,by:S.role==="Coordinator"?"Coordinator":"Advaith"})}
+// Adds a line to a contact's history.
+function hist(id,txt){(S.hist[id]=S.hist[id]||[]).push(txt)}
+
+/* ---------- shell ---------- */
+// Shows a short message at the bottom of the screen.
+function toast(t){var el=$("toast");el.textContent=t;el.style.display="block";clearTimeout(window._t);window._t=setTimeout(function(){el.style.display="none"},2000)}
+// Moves to another screen.
+function go(v){S.view=v;render();$("main").scrollTop=0}
+function how(t){return '<div class="box how"><div><b>How this works.</b> '+t+'</div></div>'}
+// Draws the numbered step bar at the top of the import and campaign screens.
+function steps(labels,cur){var camp=labels[0]==="Audience";return '<ol class="steps">'+labels.map(function(t,i){var c=i===cur?"on":(i<cur?"done":"");return '<li class="'+c+'"'+(camp?' onclick="stepTo('+i+')"':'')+'><span class="n">'+(i<cur?"✓":i+1)+'</span>'+t+'</li>'}).join("")+'</ol>'}
+var campLocks=[false,false,false];
+// Lets you jump between campaign steps. A step is only open once the steps before it are done.
+function stepTo(i){
+ if(i===0){go("S8");return}
+ if(i===1){if(!S.aud){toast("Choose an audience first (step 1)");return}go("S9");return}
+ if(!S.aud){toast("Choose an audience first (step 1)");return}
+ if(!S.ch||!S.txt){toast("Finish the message first (step 2)");return}
+ go("S10");
+}
+function setRole(r){S.role=r;if(r!=="Coordinator"&&S.scope==="team")S.scope="mine";render()}
+function roleSeg(){return '<div class="role">Viewing as <span class="seg"><button class="'+(S.role==="Volunteer"?"on":"")+'" onclick="setRole(\'Volunteer\')">Volunteer</button><button class="'+(S.role==="Coordinator"?"on":"")+'" onclick="setRole(\'Coordinator\')">Coordinator</button></span></div>'}
+// Builds the sidebar: the event you are working in, then the pages.
+function nav(){
+ var G=[["Overview",[["S2","Dashboard"]]],["Contacts",[["S3","Contacts"],["S4","Import contacts"]]],["Campaigns",[["S7","All campaigns"],["S8","New campaign"]]],["Replies",[["S13","Inbox"],["S14","FAQ & auto-reply"]]],["Organise",[["S12","Groups"],["S15","Activity log"]]],["Settings",[["S16","Event setup"],["S17","Team"],["S18","Channels & privacy"]]]];
+ $("nav").innerHTML=G.map(function(g){return "<h3>"+g[0]+"</h3>"+g[1].map(function(x){return '<button class="'+(S.view===x[0]?"on":"")+'" onclick="go(\''+x[0]+'\')">'+x[1]+"</button>"}).join("")}).join("");
+}
+
+/* ---------- S2 Dashboard ---------- */
+var CHART=["var(--c1)","var(--c2)","var(--c3)","var(--c4)","var(--c5)"];
+// The welcome header on the dashboard.
+function greet(){var d=new Date();return '<div class="hero"><div><h1 class="hh">'+(S.role==="Coordinator"?"Welcome back, Meera":"Welcome back, Advaith")+'</h1><div class="small">Tech Fest 2026 · 14 Nov · today is 23 Nov 2026</div></div><div class="heroSw">'+(S.role==="Coordinator"?'<span class="seg"><button class="'+(S.scope!=="team"?"on":"")+'" onclick="S.scope=\'mine\';render()">My work</button><button class="'+(S.scope==="team"?"on":"")+'" onclick="S.scope=\'team\';render()">Whole team</button></span>':'<span class="chip bl">Your work only</span>')+'</div></div>'}
+// One of the four number cards on the dashboard.
+function kpi(ic,l,n,s){return '<div class="stat kpi"><div class="kicon">'+ic+'</div><div class="lbl">'+l+'</div><div class="num">'+n+'</div><div class="sub">'+s+'</div></div>'}
+var IC={people:'<svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 11a4 4 0 100-8 4 4 0 000 8zm8 1a3 3 0 100-6 3 3 0 000 6zM2 21c0-4 3-6 7-6s7 2 7 6M16 15c3 0 6 1.5 6 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',send:'<svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 11l18-8-8 18-2-8-8-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',reply:'<svg viewBox="0 0 24 24" width="18" height="18"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',star:'<svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>'};
+// Circle chart of replies by label, with a legend.
+function donut(items,total){
+ var C=2*Math.PI*46,off=0,seg="";
+ items.forEach(function(x,i){var l=total?x[1]/total*C:0;if(l>0)seg+='<circle cx="60" cy="60" r="46" fill="none" stroke="'+CHART[i]+'" stroke-width="16" stroke-dasharray="'+Math.max(l-1.5,0)+' '+C+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 60 60)"/>';off+=l});
+ return '<div class="donut"><svg viewBox="0 0 120 120" width="156" height="156" role="img" aria-label="Replies by intent"><circle cx="60" cy="60" r="46" fill="none" stroke="var(--line2)" stroke-width="16"/>'+seg+'<text class="dn" x="60" y="61">'+total+'</text><text class="ds" x="60" y="78">replies</text></svg><div class="legend">'+items.map(function(x,i){return '<div class="lg"><span class="dot" style="background:'+CHART[i]+'"></span><span class="t">'+x[0]+'</span><span class="v">'+x[1]+'</span><span class="pc">'+pct(x[1],total)+'%</span></div>'}).join("")+'</div></div>';
+}
+// Replaced by the donut chart. Kept so older calls still work.
+function bars(items,total){return donut(items,total)}
+// Circle progress meter for delivery.
+function ring(p,sub){var C=2*Math.PI*36;return '<div class="ring"><svg viewBox="0 0 88 88" width="132" height="132" role="img" aria-label="'+p+'% delivered"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent2)"/><stop offset="1" stop-color="var(--accent)"/></linearGradient></defs><circle cx="44" cy="44" r="36" fill="none" stroke="var(--line2)" stroke-width="9"/><circle cx="44" cy="44" r="36" fill="none" stroke="url(#rg)" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+(C*p/100)+' '+C+'" transform="rotate(-90 44 44)"/><text class="rt" x="44" y="50">'+p+'%</text></svg><div><div class="big">'+sub+'</div></div></div>'}
+// Empty-state message shown when there is nothing to do.
+function empty(t,x){return '<div class="empty"><div class="eico">✓</div><b>'+t+'</b><p>'+x+'</p></div>'}
+// Dashboard. Team view for coordinators; personal view for everyone else.
+function S2(){
+ var team=S.role==="Coordinator"&&S.scope==="team";
+ if(team){
+  var T=TEAM_PEOPLE.reduce(function(a,p){for(var k in p)if(typeof p[k]==="number")a[k]=(a[k]||0)+p[k];return a},{});
+  return greet()+how("Whole-team view. Totals are the sum of each volunteer’s own numbers. Volunteers work in their own accounts, so each reply is handled there.")+
+  '<div class="grid kpis">'+kpi(IC.people,"Contacts",T.contacts.toLocaleString(),"Imported by all volunteers")+kpi(IC.send,"People messaged",T.sent,pct(T.delivered,T.sent)+"% delivered · "+T.failed+" failed")+kpi(IC.reply,"Replies",T.replies,pct(T.replies,T.delivered)+"% of delivered")+kpi(IC.star,"Interested",T.I,pct(T.I,T.replies)+"% of replies")+'</div>'+
+  '<div class="two"><div class="box"><div class="h2">Round 1 · all volunteers</div><div class="sub">'+T.sent+' people messaged</div>'+ring(pct(T.delivered+T.failed,T.sent),T.delivered+" delivered · "+T.failed+" failed · "+T.queued+" queued")+'</div>'+
+  '<div class="box"><div class="h2">Replies by intent</div>'+donut([["Interested",T.I],["Question",T.Q],["Undecided",T.U],["Declined",T.D],["Opted out",T.O]],T.replies)+'</div></div>'+
+  '<div class="box"><div class="h2">Needs attention · all volunteers</div>'+
+  '<div class="att"><span><b>'+T.Q+'</b> questions waiting for an answer</span><span class="small">each volunteer answers their own</span></div>'+
+  '<div class="att"><span><b>'+T.U+'</b> undecided replies need a label</span><span class="small">each volunteer labels their own</span></div>'+
+  '<div class="att"><span><b>'+T.failed+'</b> messages failed</span><span class="small">each volunteer retries their own</span></div>'+
+  '<div class="att"><span><b>'+T.I+'</b> interested people ready for follow-up</span><span class="small">each volunteer starts their own</span></div></div>'+
+  '<div class="box"><div class="h2">Per volunteer</div><table><tr><th>Name</th><th>Role</th><th>Contacts</th><th>Messaged</th><th>Replies</th><th>Interested</th><th>Questions</th><th>Undecided</th></tr>'+
+  TEAM_PEOPLE.map(function(p){return "<tr><td><b>"+p.name+"</b></td><td>"+p.role+"</td><td>"+p.contacts+"</td><td>"+p.sent+"</td><td>"+p.replies+"</td><td>"+p.I+"</td><td>"+p.Q+"</td><td>"+p.U+"</td></tr>"}).join("")+
+  '<tr class="tot"><td>Total</td><td></td><td>'+T.contacts+'</td><td>'+T.sent+'</td><td>'+T.replies+'</td><td>'+T.I+'</td><td>'+T.Q+'</td><td>'+T.U+'</td></tr></table></div>';
+ }
+ var cs=campStats(),rp=replies(),qw=qWaiting(),ud=rows.filter(function(r){return r.replied&&r.st==="U"}),fl=failedList(),ready=rows.filter(function(r){return r.st==="I"});
+ var last=S.camps[S.camps.length-1];
+ var lastPct=pct(cSent(last)-last.fails.length,last.ids.length);
+ var total=qw.length+ud.length+fl.length+ready.length;
+ return greet()+how("Your own work: the contacts you imported, the messages you sent and the replies you handle. Each item in Needs attention lists the people, and its button takes you to where you act on them.")+
+ '<div class="grid kpis">'+kpi(IC.people,"Contacts",rows.length,"Imported by you")+kpi(IC.send,"People messaged",cs.sent,pct(cs.delivered,cs.sent)+"% delivered · "+cs.failed+" failed")+kpi(IC.reply,"Replies",rp,pct(rp,cs.delivered)+"% of delivered")+kpi(IC.star,"Interested",cnt("I"),"incl. people you marked")+'</div>'+
+ '<div class="two"><div class="box"><div class="h2">'+last.name+'</div><div class="sub">'+last.ids.length+' people · '+last.when+'</div>'+ring(lastPct,cSent(last)-last.fails.length+" delivered · "+last.fails.length+" failed · "+(last.pending||[]).length+" queued")+'<div class="row"><button class="b" onclick="go(\'S11\')">View progress</button></div></div>'+
+ '<div class="box"><div class="h2">Replies by intent</div>'+donut([["Interested",repCnt("I")],["Question",repCnt("Q")],["Undecided",repCnt("U")],["Declined",repCnt("D")],["Opted out",repCnt("O")]],rp)+'</div></div>'+
+ '<div class="box"><div class="row" style="justify-content:space-between"><div class="h2" style="margin:0">Needs attention</div><span class="chip '+(total?"a":"g")+'">'+total+' open</span></div>'+
+ (total?
+ attRow(qw.length+" questions waiting for an answer",qw,"Open questions",function(id){return "openReply("+id+")"},"Answer","questions")+
+ attRow(ud.length+" undecided replies need a label",ud,"Open undecided",function(id){return "openReply("+id+")"},"Label","undecided")+
+ attRow(fl.length+" messages failed",fl.map(function(f){return R(f.id)}),"Open failed",function(id){return "go(\'S11\')"},"Retry","failed")+
+ attRow(ready.length+" interested people ready for a follow-up",ready,"Start follow-up",null,"Create follow-up","ready")
+ :empty("Nothing needs you right now","Every reply has an answer or a label, and every message has been delivered."))+
+ '</div>';
+}
+// A simple number card.
+function stat(l,n,s){return '<div class="stat"><div class="lbl">'+l+'</div><div class="num">'+n+'</div><div class="sub">'+s+'</div></div>'}
+// One row in Needs attention: a count, the people involved, and a button.
+function attRow(title,list,_a,fnFor,btn,kind){
+ var chips=list.slice(0,12).map(function(r){
+  var id=r.id,label=r.name;
+  if(kind==="failed"){var c=S.camps.filter(function(c){return c.fails.indexOf(id)>=0})[0];return '<span class="chip r" onclick="go(\'S11\')">'+label+' · '+(FAILWHY[id]||"Bad email address")+'</span>'}
+  if(kind==="ready")return '<span class="chip g">'+label+'</span>';
+  return '<span class="chip" onclick="openReply('+id+')">'+label+'</span>';
+ }).join("");
+ var more=list.length>12?'<span class="small"> + '+(list.length-12)+' more</span>':"";
+ var action="";
+ if(kind==="questions")action='<button class="b" onclick="go(\'S13\');S.inboxTab=\'Questions\';render()">Open questions</button>';
+ if(kind==="undecided")action='<button class="b" onclick="go(\'S13\');S.inboxTab=\'Needs review\';render()">Open undecided</button>';
+ if(kind==="failed")action='<button class="b" onclick="go(\'S11\');S.prog=\'fail\';render()">Retry failed</button>';
+ if(kind==="ready")action='<button class="p" onclick="startFollowUp()">Create follow-up</button>';
+ return '<div class="att"><div style="flex:1"><b>'+title+'</b><div class="row" style="margin:6px 0 0">'+(list.length?chips+more:'<span class="small">none right now</span>')+'</div></div>'+action+'</div>';
+}
+function openReply(id){S.inboxId=id;S.inboxTab="All";go("S13")}
+function startFollowUp(){S.aud={type:"group",key:"interested"};S.ch=null;toast("Audience set to Interested participants");go("S8")}
+
+/* ---------- S3 Contacts ---------- */
+// Contacts list with filter tabs, add/edit/delete, groups and the bulk actions.
+function S3(){
+ var tabs=[["All",rows.length],["Interested",cnt("I")],["Question",cnt("Q")],["Undecided",cnt("U")],["Declined",cnt("D")],["Opted out",rows.filter(function(r){return r.opt}).length],["No reply yet",rows.filter(function(r){return r.st==="-"&&!r.opt}).length]];
+ var list=rows.filter(function(r){
+  if(S.ctab==="All")return true;
+  if(S.ctab==="Opted out")return r.opt;
+  if(S.ctab==="No reply yet")return r.st==="-"&&!r.opt;
+  return LABEL[r.st]===S.ctab;
+ });
+ var nSel=Object.keys(S.sel).filter(function(k){return S.sel[k]}).length;
+ var coordNote=S.role==="Coordinator"?'<div class="box how" style="margin-bottom:12px"><div><b>Coordinator note.</b> This list shows Advaith Reddy’s 50 contacts as the working example. The whole team’s 1,000 contacts are summarised on the Dashboard under Whole team.</div></div>':"";
+ return "<h1>Contacts</h1>"+coordNote+how("Your contacts. Tick people to act on several at once. Use <b>Open</b> to see one person’s full history. Status changes here update the Dashboard and Inbox straight away.")+
+ '<div class="row" style="justify-content:space-between"><div>'+tabs.map(function(t){return '<span class="chip '+(S.ctab===t[0]?"on":"")+'" onclick="S.ctab=\''+t[0]+'\';render()">'+t[0]+' <span class="c">'+t[1]+'</span></span>'}).join("")+'</div><button class="b" onclick="go(\'S4\')">Import contacts</button></div>'+
+ (nSel?'<div class="box" style="margin-top:12px"><div class="row" style="justify-content:space-between"><b>'+nSel+' selected</b><div class="row" style="margin:0"><button class="p" onclick="S.addOpen=!S.addOpen;render()">Add to group</button><button class="b" onclick="excludeSel()">Exclude from campaigns</button><button class="b" onclick="exportSel()">Export</button><button class="b" onclick="S.sel={};render()">Clear</button></div></div>'+
+ (S.addOpen?addPanel():'')+
+ '<div class="small" style="margin-top:8px"><b>Add to group</b> puts the ticked people into a group you choose. <b>Exclude</b> keeps them in your list but removes them from every campaign until you include them again. <b>Export</b> downloads the ticked people as a spreadsheet file (CSV) for your records.</div></div>':"")+
+ '<div class="box" style="padding:6px 0 0"><div class="tblwrap"><table><tr><th><input type="checkbox" onchange="selAll(this.checked)" '+(list.length&&list.every(function(r){return S.sel[r.id]})?"checked":"")+'></th><th>Name</th><th>Reach</th><th>Status</th><th>Groups</th><th></th></tr>'+
+ list.map(function(r){
+  var inG=S.groups.filter(function(g){return (S.members[g.key]||[]).indexOf(r.id)>=0}).map(function(g){return g.name});
+  return '<tr><td><input type="checkbox" '+(S.sel[r.id]?"checked":"")+' onchange="toggleSel('+r.id+')"></td><td><b>'+r.name+'</b><div class="small">'+r.col+'</div></td><td><span class="chip '+(r.reach==="N"?"r":r.reach==="B"?"g":"bl")+'">'+REACHTXT[r.reach]+'</span></td><td>'+chipFor(r.opt?"O":r.st)+(r.excl?' <span class="chip">Excluded</span>':'')+'</td><td class="small">'+(inG.length?inG.join(", "):"—")+'</td><td><button class="b" onclick="openPanel('+r.id+')">Open</button></td></tr>'
+ }).join("")+'</table></div></div>';
+}
+// The box that lets you put selected contacts into a group.
+function addPanel(){
+ return '<div class="addp"><div class="h2" style="font-size:14px">Choose a group</div>'+
+ allGroups().map(function(g){var smart=g.kind==="Smart";return '<label style="display:flex;justify-content:space-between;width:100%;padding:6px 0"><span><input type="checkbox" '+(smart?"disabled":"")+' id="g_'+g.key+'" '+(smart?"":"")+'> '+g.name+'</span><span class="small">'+(smart?"Smart group · updates itself":g.n+" people")+'</span></label>'}).join("")+
+ '<div class="row"><input id="newg" placeholder="New group name" style="flex:1"><button class="b" onclick="newGroup()">Create group</button></div>'+
+ '<div class="row"><button class="p" onclick="confirmAdd()">Add selected people</button><button class="b" onclick="S.addOpen=false;render()">Cancel</button></div></div>';
+}
+// Creates a new group from the Contacts page.
+function newGroup(){var n=$("newg").value.trim();if(!n){toast("Type a group name first");return}var k="g"+(S.groups.length+1);S.groups.push({key:k,name:n});S.members[k]=[];logEv("Group","Created group “"+n+"”");render();toast("Group created: "+n)}
+// Adds the selected contacts to the chosen group.
+function confirmAdd(){
+ var ids=Object.keys(S.sel).filter(function(k){return S.sel[k]}).map(Number);
+ var ticked=allGroups().filter(function(g){var el=$("g_"+g.key);return el&&el.checked&&g.kind!=="Smart"});
+ if(!ticked.length){toast("Tick a group first");return}
+ ticked.forEach(function(g){S.members[g.key]=(S.members[g.key]||[]).concat(ids.filter(function(i){return (S.members[g.key]||[]).indexOf(i)<0}))});
+ logEv("Group","Added "+ids.length+" people to "+ticked.map(function(g){return g.name}).join(", "));
+ S.addOpen=false;S.sel={};render();toast("Added "+ids.length+" people");
+}
+// Excludes the selected contacts from campaigns. They stay in the list.
+function excludeSel(){var ids=Object.keys(S.sel).filter(function(k){return S.sel[k]}).map(Number);ids.forEach(function(i){R(i).excl=true;hist(i,"Excluded from campaigns by you")});logEv("Exclude","Excluded "+ids.length+" people from campaigns");S.sel={};render();toast("Excluded "+ids.length+" people")}
+// Downloads the selected contacts (or everyone) as a CSV file.
+function exportSel(){
+ var ids=Object.keys(S.sel).filter(function(k){return S.sel[k]}).map(Number);
+ var list=ids.length?rows.filter(function(r){return ids.indexOf(r.id)>=0}):rows;
+ var csv="Name,College,Phone,Email,Reach,Status,Excluded\n"+list.map(function(r){return [r.name,r.col,r.ph,r.em,REACHTXT[r.reach],LABEL[r.opt?"O":r.st],r.excl?"yes":"no"].join(",")}).join("\n");
+ try{var a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);a.download="orca_contacts.csv";document.body.appendChild(a);a.click();a.remove()}catch(e){}
+ logEv("Export","Exported "+list.length+" contacts to CSV");toast("Exported "+list.length+" contacts (CSV)");
+}
+// Selects or clears every contact on the page.
+function selAll(v){rows.forEach(function(r){S.sel[r.id]=v});render()}
+// Selects or clears one contact.
+function toggleSel(id){S.sel[id]=!S.sel[id];render()}
+// Opens a contact's details in the side panel.
+function openPanel(id){S.cpanel=id;render()}
+// Closes the side panel.
+function closePanel(){S.cpanel=null;render()}
+// Builds the history shown for one contact, in date order.
+function timeline(r){
+ var t=[{when:"22 Oct, 16:02",txt:"Imported from volunteer_contacts.xlsx"}];
+ if(r.reach==="N")t.push({when:"23 Oct",txt:"Not messaged · no phone or email on file"});
+ else if(S.camps[0].ids.indexOf(r.id)>=0){
+  if(r.fail)t.push({when:"23 Oct, 10:20",txt:"Round 1 failed · "+(FAILWHY[r.id]||"Bad email address")});
+  else t.push({when:"23 Oct, 10:20",txt:"Round 1 invitation delivered on "+(r.reach==="B"?"WhatsApp and email":r.reach==="W"?"WhatsApp":"email")});
+ }
+ if(r.txt)t.push({when:"Reply · "+r.time,txt:"Replied: “"+r.txt+"”"});
+ if(r.photo)t.push({when:"Reply · "+r.time,txt:"Sent a photo: ID card"});
+ if(r.st!=="-"&&r.st!=="O")t.push({when:"ORCA label",txt:"Labelled "+LABEL[r.st]+(r.conf?" ("+r.conf+"% sure)":"")});
+ if(r.st==="O")t.push({when:"Reply · "+r.time,txt:"Replied STOP · opted out"});
+ (S.hist[r.id]||[]).forEach(function(h){t.push({when:"Today",txt:h})});
+ return t;
+}
+// Contents of the side panel for one contact: details, status, actions and history.
+function panelHTML(r){
+ var canMsg=true;
+ var opts=r.replied?["I","Q","U","D"]:["-","I","Q","U","D"];
+ var stBox=r.opt?'<span class="small">Opted out · reverse it first</span>':'<select onchange="setStatus('+r.id+',this.value)">'+opts.map(function(s){return '<option value="'+s+'" '+(r.st===s?"selected":"")+'>'+LABEL[s]+'</option>'}).join("")+'</select>';
+ return '<div class="pn-head"><div><div class="h2" style="font-size:20px;margin:0">'+r.name+'</div><div class="small">'+r.col+' · '+r.em+' · '+r.ph+'</div></div><button class="b" onclick="closePanel()">Close</button></div>'+
+ '<div class="row" style="margin:10px 0"><span class="chip bl">'+REACHTXT[r.reach]+'</span>'+chipFor(r.opt?"O":r.st)+(r.excl?'<span class="chip">Excluded</span>':'')+'</div>'+
+ '<div class="how" style="margin:12px 0;box-shadow:none"><div><b>Status:</b> '+(r.opt?"Opted out. This person is never messaged.":r.replied?"ORCA labelled this reply. You can change the label; it updates every page.":"They have not replied. You can mark them by hand (for example after a phone call). Marked people count in the status lists, but not in Replies.")+'</div></div>'+
+ '<div class="row" style="margin:0 0 12px">Status: '+stBox+'</div>'+
+ (S.reverseFor===r.id?reverseForm(r.id):'')+'<div class="row" style="margin:0 0 16px"><button class="p" onclick="messageContact('+r.id+')">Message this person</button>'+
+ (r.opt?'<button class="b" onclick="reverseOpt('+r.id+')">Reverse opt-out (needs a reason)</button>':'<button class="b" onclick="optOut('+r.id+')">Opt out</button>')+
+ '<button class="b" onclick="R('+r.id+').excl=!R('+r.id+').excl;render()">'+(r.excl?"Include again":"Exclude from campaigns")+'</button>'+
+ '<button class="b lock" '+(S.role==="Coordinator"?"":"disabled")+' title="Coordinators only" onclick="toast(\'Personal data deleted (demo)\')">Delete personal data'+(S.role==="Coordinator"?"":" · coordinators only")+'</button></div>'+
+ '<div class="h2" style="font-size:14px">Full history</div>'+
+ '<div class="tl">'+timeline(r).map(function(t){return '<div class="tli"><span class="dot"></span><div><div class="small">'+t.when+'</div><div>'+t.txt+'</div></div></div>'}).join("")+'</div>';
+}
+// Starts a campaign for one person, beginning at the Audience step.
+function messageContact(id){S.aud={type:"person",id:id};S.ch=null;S.cpanel=null;toast("Audience set to "+R(id).name+". Choose a message next.");go("S8")}
+// Changes a reply label. Checks that you own the contact first.
+function setStatus(id,v){var r=R(id);if(r.opt){toast("Reverse the opt-out first");return}if(r.st===v)return;if(v==="-"&&r.replied){toast("They have replied, so they can’t go back to No reply yet");return}hist(id,"Status set to "+LABEL[v]+" by you"+(r.replied?"":" (no reply yet, marked by hand)"));logEv("Status",r.name+" set to "+LABEL[v]+(r.replied?"":" (marked by hand)"));r.st=v;if(v!=="Q")delete S.answered[id];render();toast(r.name+" is now "+LABEL[v])}
+// Marks a contact as opted out. They are never messaged again.
+function optOut(id){var r=R(id);r.opt=true;hist(id,"Opted out by hand");logEv("Opt-out",r.name+" opted out by hand");render();toast(r.name+" removed from every audience")}
+// Opens the form to reverse an opt-out. A reason is needed.
+function reverseOpt(id){S.reverseFor=id;S.reverseErr="";render()}
+// Reverses an opt-out after a reason is written, and logs it.
+function confirmReverse(id){var r=R(id);var reason=(($("rv")||{}).value||"").trim();if(!reason){S.reverseErr="Write a reason first. It is logged.";render();return}r.opt=false;if(r.st==="O")r.st="U";S.reverseFor=null;hist(id,"Opt-out reversed: "+reason);logEv("Opt-out reversed",r.name+" · "+reason);render();toast("Opt-out reversed. Logged.")}
+// The form that asks for the reason before an opt-out is reversed.
+function reverseForm(id){return '<div class="tint a"><div class="lbl">Reverse opt-out</div><p class="small">Only do this if the person asked to hear from us again. The reason is written to the log.</p><div class="row"><input id="rv" placeholder="Reason, e.g. asked to hear from us again" style="flex:1"><button class="p" onclick="confirmReverse('+id+')">Confirm</button><button class="b" onclick="S.reverseFor=null;render()">Cancel</button></div>'+(S.reverseErr?'<div class="err">'+S.reverseErr+'</div>':'')+'</div>'}
+/* patch: panel is rendered as overlay on S3 */
+// Shows the side panel over the Contacts page.
+function panelOverlay(){return S.cpanel?'<div class="scrim" onclick="closePanel()"></div><aside class="pn">'+panelHTML(R(S.cpanel))+'</aside>':""}
+
+/* ---------- S4-S6 Import ---------- */
+var IMPROWS=[["Rahul S.","duplicate of Rahul Sharma","dup","Rahul Sharma"],["Pranav J.","duplicate of Pranav Joshi","dup","Pranav Joshi"],["Lakshmi R.","phone has 9 digits","ph","Lakshmi Rao"],["Tarun Reddy","phone missing","ph","Tarun Reddy"],["Lavanya S.","phone has 11 digits","ph","Lavanya Subramanian"]];
+// The rows that need a decision.
+function impIssues(){return IMPROWS.map(function(x,i){return {k:"i"+i,type:x[2],label:x[0],why:x[1],name:x[3]}})}
+// Saves a corrected phone number during import. It must have exactly 10 digits.
+function fixPhone(k){var v=(($("fx_"+k)||{}).value||"").replace(/\D/g,"");if(v.length!==10){S.imp.fixErr=S.imp.fixErr||{};S.imp.fixErr[k]="A phone number needs exactly 10 digits. This has "+v.length+".";render();return}S.imp.dec[k]="fix";S.imp.fixed=S.imp.fixed||{};S.imp.fixed[k]=v;S.imp.fixErr&&delete S.imp.fixErr[k];logEv("Import","Phone fixed for one row");render();toast("Number saved")}
+// Counts for the import: ready rows, decisions still needed, and what will be imported.
+function impCounts(){
+ var iss=impIssues(),merged=0,skipped=0,keep=0,decided=0;
+ iss.forEach(function(x){var d=S.imp.dec[x.k];if(!d)return;decided++;if(d==="merge")merged++;else if(d==="skip")skipped++;else keep++});
+ var ready=47;
+ var imported=ready+keep;
+ return {ready:ready,left:iss.length-decided,decided:decided,merged:merged,skipped:skipped,imported:imported};
+}
+// Import step 1: download the template, and choose an Excel or CSV file.
+function S4(){
+ var f=S.imp.file;
+ return "<h1>Import contacts</h1>"+steps(["Upload","Check and fix","Review and import"],0)+how("Pick your spreadsheet. Nothing is saved until the last step. ORCA matches the columns on its own; if something cannot be matched, it appears in step 2.")+
+ '<div class="box"><div class="drop">'+(S.imp.fileLoaded?'<div class="h2" style="margin:0">volunteer_contacts.xlsx</div><p>52 rows · 6 columns</p><span class="chip g">All 6 columns matched automatically</span>':'<div class="h2" style="margin:0">Drop an Excel or CSV file here</div><p>.xlsx, .xls or .csv · up to 10 MB</p><button class="b" onclick="S.imp.fileLoaded=true;render()">Choose file</button>')+'</div>'+
+ '<div class="row" style="justify-content:space-between;margin-top:16px"><button class="b" onclick="toast(\'Sample template downloaded\')">Download sample template</button><button class="p" '+(S.imp.fileLoaded?"":"disabled")+' onclick="go(\'S5\')">Continue</button></div></div>';
+}
+// Import step 2: decide what to do with each row that has a problem.
+function S5(){
+ var c=impCounts();
+ var rowsHTML=impIssues().map(function(x){
+  var d=S.imp.dec[x.k];
+  var head='<div class="row" style="justify-content:space-between;margin:0"><div><b>'+x.label+'</b> <span class="small">'+x.why+'</span></div>'+(d?'<span class="chip g">'+decName(d)+'</span>':'<span class="chip a">Needs a decision</span>')+'</div>';
+  if(x.type==="dup"){
+   var bt=[["merge","Merge into existing"],["keep","Keep both"],["skip","Skip row"]];
+   return '<div class="iss">'+head+'<div class="row" style="margin:10px 0 0">'+bt.map(function(q){return '<button class="'+(d===q[0]?"p":"b")+'" onclick="S.imp.dec[\''+x.k+'\']=\''+q[0]+'\';render()">'+q[1]+'</button>'}).join("")+'</div></div>';
+  }
+  var err=(S.imp.fixErr||{})[x.k];
+  var fixed=(S.imp.fixed||{})[x.k];
+  return '<div class="iss">'+head+
+   (d==="fix"?'<div class="small" style="margin-top:6px">Saved number: <b>'+fixed+'</b></div>':
+   '<div class="row" style="margin:10px 0 0"><input id="fx_'+x.k+'" inputmode="numeric" placeholder="Correct 10-digit number" value="'+(fixed||"")+'" style="width:230px"><button class="p" onclick="fixPhone(\''+x.k+'\')">Save number</button><button class="b" onclick="S.imp.dec[\''+x.k+'\']=\'keep\';render()">Import without phone</button><button class="b" onclick="S.imp.dec[\''+x.k+'\']=\'skip\';render()">Skip row</button></div>'+(err?'<div class="err">'+err+'</div>':''))+
+   '</div>';
+ }).join("");
+ return "<h1>Import contacts</h1>"+steps(["Upload","Check and fix","Review and import"],1)+how("Only problems appear here, because ORCA already matched every column. 47 rows are ready. Five rows need one decision each. Two phone problems need the correct number typed in.")+
+ '<div class="grid" style="margin-bottom:16px"><div class="stat"><div class="lbl">Ready</div><div class="num">'+c.ready+'</div><div class="sub">no problems</div></div><div class="stat"><div class="lbl">Need a decision</div><div class="num">'+c.left+'</div><div class="sub">choose below</div></div><div class="stat"><div class="lbl">Decided</div><div class="num">'+c.decided+'</div><div class="sub">of 5</div></div></div>'+
+ '<div class="box"><div class="h2">Rows to decide</div>'+rowsHTML+'</div>'+
+ '<div class="row" style="justify-content:space-between"><button class="b" onclick="go(\'S4\')">Back</button><button class="p" '+(c.left?"disabled":"")+' onclick="go(\'S6\')">'+(c.left?"Decide "+c.left+" more to continue":"Continue")+'</button></div>';
+}
+function decName(d){return {merge:"Merged",keep:"Imported",skip:"Skipped",fix:"Number fixed"}[d]||d}
+// Import step 3: check the totals, tick consent, then import.
+function S6(){
+ var c=impCounts();
+ if(S.imp.done)return "<h1>Import contacts</h1>"+steps(["Upload","Check and fix","Review and import"],2)+'<div class="box" style="text-align:center;padding:42px"><div class="tick">✓</div><div class="h2" style="font-size:22px;margin-top:14px">'+c.imported+' contacts imported</div><p class="small">'+c.merged+' merged into an existing contact · '+c.skipped+' skipped · Undo is available for 24 hours</p><div class="row" style="justify-content:center"><button class="b" onclick="S.imp={step:0,dec:{},consent:false,done:false,fileLoaded:false};go(\'S4\')">Undo import</button><button class="p" onclick="go(\'S3\')">See contacts</button></div></div>';
+ return "<h1>Import contacts</h1>"+steps(["Upload","Check and fix","Review and import"],2)+how("Check the numbers, tick the consent box, then import. The consent box must be ticked before the import button works.")+
+ '<div class="grid" style="margin-bottom:16px"><div class="stat"><div class="lbl">Will be imported</div><div class="num">'+c.imported+'</div></div><div class="stat"><div class="lbl">Merged into existing</div><div class="num">'+c.merged+'</div></div><div class="stat"><div class="lbl">Skipped</div><div class="num">'+c.skipped+'</div></div></div>'+
+ '<div class="box"><div class="small">Rows in file 52 − merged '+c.merged+' − skipped '+c.skipped+' = '+(52-c.merged-c.skipped)+' rows. '+(52-c.merged-c.skipped)+' rows include the kept duplicates.</div><label style="margin-top:14px"><input type="checkbox" '+(S.imp.consent?"checked":"")+' onchange="S.imp.consent=this.checked;render()"> These people agreed to be contacted by the event team</label></div>'+
+ '<div class="row" style="justify-content:space-between"><button class="b" onclick="go(\'S5\')">Back</button><button class="p" '+(S.imp.consent&&!c.left?"":"disabled")+' onclick="S.imp.done=true;logEv(\'Import\',\''+c.imported+' contacts imported from volunteer_contacts.xlsx\');render();toast(\'Imported\')">Import '+c.imported+' contacts</button></div>';
+}
+
+// SCREENS 1: login, campaigns (audience, message, check and send, progress), inbox, FAQ helpers, activity log, settings pages, and the render helpers.
+/* ---------- S1 Login ---------- */
+function S1(){
+ var A=S.auth;
+ var em=A.email||"",pw=A.pw||"";
+ var head='<div style="text-align:center;margin-bottom:22px"><div class="logo" style="color:var(--ink);font-size:22px">ORCA</div><div class="small" style="margin-top:6px">Event outreach, with people in control</div></div>';
+ var body;
+ if(A.mode==="forgot"){
+  body='<div class="h2" style="font-size:20px">Reset your password</div><p class="small">Enter the email you use for ORCA. We will send a reset link.</p>'+
+   '<div class="row"><input id="em" value="'+em+'" placeholder="Email" style="width:100%" oninput="S.auth.email=this.value;chkLogin()"></div>'+
+   (A.err?'<div class="err">'+A.err+'</div>':'')+
+   '<div class="row" style="margin-top:14px"><button class="p" id="signin" '+(validEmail(em)?"":"disabled")+' onclick="sendReset()" style="width:100%">Send reset link</button></div>'+
+   '<div class="row" style="justify-content:center"><a href="#" onclick="S.auth.mode=\'login\';S.auth.err=\'\';render();return false">Back to sign in</a></div>';
+ } else if(A.mode==="sent"){
+  body='<div class="tick">✓</div><div class="h2" style="text-align:center;margin-top:14px">Check your inbox</div><p class="small" style="text-align:center">If an account exists for <b>'+em+'</b>, a reset link is on its way.</p><div class="row" style="justify-content:center"><button class="b" onclick="S.auth.mode=\'login\';render()">Back to sign in</button></div>';
+ } else {
+  body='<div class="h2" style="font-size:20px">Welcome back</div><p class="small">Sign in to continue to your events.</p>'+
+   '<div class="row" style="margin-top:14px"><input id="em" value="'+em+'" placeholder="Email" style="width:100%" oninput="S.auth.email=this.value;chkLogin()"></div>'+
+   '<div class="row"><div style="position:relative;width:100%"><input id="pw" type="'+(A.show?"text":"password")+'" value="'+pw+'" placeholder="Password" style="width:100%;padding-right:64px" oninput="S.auth.pw=this.value;chkLogin()"><a href="#" onclick="S.auth.show=!S.auth.show;render();return false" style="position:absolute;right:12px;top:10px;font-size:12px">'+(A.show?"Hide":"Show")+'</a></div></div>'+
+   '<div class="row" style="justify-content:space-between"><label><input type="checkbox" checked> Keep me signed in on this device</label><a href="#" onclick="S.auth.mode=\'forgot\';S.auth.err=\'\';render();return false">Forgot password?</a></div>'+
+   (A.err?'<div class="err">'+A.err+'</div>':'')+
+   '<div class="row" style="margin-top:14px"><button class="p" id="signin" '+((validEmail(em)&&pw)?"":"disabled")+' onclick="signIn()" style="width:100%">Sign in</button></div>'+
+   '<div class="small" style="text-align:center;margin-top:14px">New here? Ask a coordinator for an invite.</div>'+
+   '<div class="small" style="text-align:center;margin-top:6px">Demo: any valid email and any password will sign you in.</div>';
+ }
+ return '<div class="login"><div class="box" style="max-width:400px;margin:56px auto;padding:34px 34px 28px">'+head+body+'</div></div>';
+}
+function validEmail(e){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e||"")}
+function chkLogin(){var b=$("signin");if(!b)return;var e=S.auth.email||"",pw=S.auth.pw||"";var ok=S.auth.mode==="forgot"?validEmail(e):(validEmail(e)&&pw);b.disabled=!ok}
+function signIn(){
+ var e=S.auth.email||"",pw=S.auth.pw||"";
+ if(!validEmail(e)){S.auth.err="Enter a valid email, such as name@college.edu";render();return}
+ if(!pw){S.auth.err="Enter your password";render();return}
+ S.loggedIn=true;S.auth.err="";S.auth.pw="";S.view="S2";render();toast("Signed in as "+e);
+}
+function sendReset(){
+ var e=S.auth.email||"";
+ if(!validEmail(e)){S.auth.err="Enter a valid email address";render();return}
+ S.auth.mode="sent";S.auth.err="";render();
+}
+function signOut(){S.loggedIn=false;S.view="S1";S.auth={mode:"login",err:"",show:false,email:S.auth.email||"",pw:""};render();toast("Signed out")}
+
+/* ---------- S7 Campaigns list ---------- */
+function S7(){
+ return "<h1>Campaigns</h1>"+how("Every campaign you have sent or queued. Click a row to open its progress. <b>New campaign</b> always starts with Audience, then Message, then Check and send.")+
+ '<div class="row" style="justify-content:space-between"><div class="small">'+S.camps.length+' campaigns</div><button class="p" onclick="newCampaign()">+ New campaign</button></div>'+
+ '<div class="box"><table><tr><th>Campaign</th><th>Channels</th><th>People</th><th>Delivered</th><th>Failed</th><th>Queued</th><th>Status</th></tr>'+
+ S.camps.map(function(c){var st=c.state==="done"?"Done":c.state==="paused"?"Paused":c.state==="stopped"?"Stopped":"Sending";var cls=st==="Done"?"":st==="Sending"?"g":"a";return '<tr style="cursor:pointer" onclick="S.prog=\''+c.id+'\';go(\'S11\')"><td><b>'+c.name+'</b><div class="small">'+c.when+'</div></td><td><span class="chip bl">'+c.ch+'</span></td><td>'+c.ids.length+'</td><td>'+cDel(c)+'</td><td>'+c.fails.length+'</td><td>'+(c.pending||[]).length+'</td><td><span class="chip '+cls+'">'+st+'</span></td></tr>'}).join("")+'</table></div>';
+}
+function newCampaign(){S.aud=null;S.ch=null;S.checked=false;S.typed="";go("S8")}
+
+/* ---------- S8 Audience (step 1) ---------- */
+function S8(){
+ var a=S.aud;
+ var groups=allGroups();
+ var sel=a&&a.type==="group"?a.key:"";
+ var head=a&&a.type==="person"?'<div class="row"><span class="chip on">Selected from Contacts</span><b>'+R(a.id).name+'</b><span class="small">1 person</span><button class="b" onclick="S.aud=null;render()">Clear</button></div>':
+  '<div class="row"><select onchange="S.aud={type:\'group\',key:this.value};S.ch=null;render()" style="min-width:300px"><option value="">Choose a group…</option>'+groups.map(function(g){return '<option value="'+g.key+'" '+(sel===g.key?"selected":"")+'>'+g.name+' ('+g.n+')</option>'}).join("")+'</select><span class="small">'+(sel?"Rule: "+(groups.filter(function(g){return g.key===sel})[0].rule):"Pick who receives it")+'</span></div>';
+ var st=a?audStats(a,S.ch):null;
+ var rc=a?reachCount(membersOf(a)):null;
+ return "<h1>New campaign</h1>"+steps(["Audience","Message","Check and send"],0)+how("Step 1: choose <b>who</b> receives it. ORCA counts each person by the channels they can be reached on, and removes opted-out and excluded people with a reason. Then continue to the message.")+
+ '<div class="box"><div class="h2">Who should receive it?</div>'+head+
+ (a?'<div class="row" style="margin-top:14px">'+reachChips(rc)+'</div>':'')+'</div>'+
+ (a?'<div class="grid" style="margin-bottom:16px"><div class="stat"><div class="lbl">In this audience</div><div class="num">'+st.total+'</div></div><div class="stat"><div class="lbl">Left out</div><div class="num">'+st.left+'</div><div class="sub">opted out '+st.opt+' · excluded by you '+st.excl+' · no channel '+st.noch+'</div></div><div class="stat"><div class="lbl">Can receive</div><div class="num" style="color:var(--ok)">'+st.receive.length+'</div><div class="sub">reachable on at least one channel</div></div></div>':'')+
+ '<div class="row" style="justify-content:space-between"><button class="b" onclick="go(\'S7\')">Back to campaigns</button><button class="p" '+(a?"":"disabled")+' onclick="go(\'S9\')">Continue to message</button></div>';
+}
+
+/* ---------- S9 Message (step 2) ---------- */
+function S9(){
+ if(!S.aud){return S8()}
+ var st=audStats(S.aud,null);
+ var both=audStats(S.aud,"Both").receive.length,wa=audStats(S.aud,"WhatsApp").receive.length,em=audStats(S.aud,"Email").receive.length;
+ var list=st.receive.length?st.receive:membersOf(S.aud);
+ var p=list[S.prev%Math.max(1,list.length)]||list[0];
+ var ch=S.ch;
+ var body=S.txt.replace(/\{\{Name\}\}/g,p?p.name.split(" ")[0]:"Name").replace(/\{\{College\}\}/g,p?p.col:"College").replace(/\{\{EventName\}\}/g,"Tech Fest 2026").replace(/\{\{RegistrationLink\}\}/g,"techfest.college.edu/register");
+ return "<h1>New campaign</h1>"+steps(["Audience","Message","Check and send"],1)+how("Step 2: write the message for <b>"+audLabel(S.aud)+"</b>. Pick a channel first; the numbers show how many people each choice reaches. Placeholders such as {{Name}} are filled in for each person.")+
+ '<div class="two"><div class="box"><div class="h2">Channel</div><div class="seg">'+["WhatsApp","Email","Both"].map(function(c){var n=c==="WhatsApp"?wa:c==="Email"?em:both;return '<button class="'+(ch===c?"on":"")+'" onclick="S.ch=\''+c+'\';render()">'+c+' · '+n+'</button>'}).join("")+'</div>'+
+ '<div class="small" style="margin-top:8px">Numbers are people. “Both” sends on WhatsApp and email to each person who has them, and counts that person once.</div>'+
+ (ch&&ch!=="WhatsApp"?'<div class="row"><input value="'+S.subj+'" placeholder="Subject line" style="width:100%" oninput="S.subj=this.value;render()"></div>':'')+
+ '<div class="h2" style="margin-top:14px">Message</div><textarea oninput="S.txt=this.value;updPreview()">'+S.txt+'</textarea>'+
+ '<div class="row">'+["{{Name}}","{{College}}","{{EventName}}","{{RegistrationLink}}"].map(function(x){return '<span class="chip" onclick="S.txt+=\' '+x+'\';render()">'+x+'</span>'}).join("")+'</div>'+
+ '<div class="h2" style="margin-top:14px">Photo banner or letter (optional)</div><div class="row">'+(S.photo?'<span class="photo">banner.jpg · 1.2 MB</span><button class="b" onclick="S.photo=false;render()">Remove</button>':'<button class="b" onclick="S.photo=true;render()">Add photo</button><span class="small">JPG or PNG, up to 5 MB. Sent with every message.</span>')+'</div>'+
+ '<div class="row" style="justify-content:space-between;margin-top:18px"><button class="b" onclick="go(\'S8\')">Back to audience</button><button class="p" '+(ch&&S.txt?"":"disabled")+' onclick="go(\'S10\')">Next: check and send</button></div></div>'+
+ '<div class="preview" id="prev"><div class="lbl">Preview · '+(p?p.name:"")+(ch?" · "+ch:"")+'</div>'+(ch&&ch!=="WhatsApp"?'<p style="font-weight:700;margin-top:12px">'+S.subj+'</p>':"")+(S.photo?'<div class="mockphoto">Photo banner</div>':"")+'<p id="prevBody">'+body+'</p><div class="row"><button class="b" onclick="S.prev=Math.max(0,S.prev-1);render()">‹ previous person</button><button class="b" onclick="S.prev=S.prev+1;render()">next person ›</button></div><div class="small">Showing person '+((S.prev%Math.max(1,list.length))+1)+' of '+list.length+' in this audience.</div></div></div>';
+}
+function previewBody(p){return S.txt.replace(/\{\{Name\}\}/g,p?p.name.split(" ")[0]:"Name").replace(/\{\{College\}\}/g,p?p.col:"College").replace(/\{\{EventName\}\}/g,"Tech Fest 2026").replace(/\{\{RegistrationLink\}\}/g,"techfest.college.edu/register")}
+function updPreview(){var e=$("prevBody");if(e){var list=audStats(S.aud,null).receive;var p=list[S.prev%Math.max(1,list.length)]||list[0];e.innerHTML=previewBody(p)}}
+
+/* ---------- S10 Check and send (step 3) ---------- */
+function S10(){
+ if(!S.aud||!S.ch){return S9()}
+ var r=audStats(S.aud,S.ch),n=r.receive.length,needType=n>200;
+ var ok=S.checked&&(!needType||S.typed===String(n));
+ var idx=Math.min(S.sendI,Math.max(0,n-1));
+ var p=r.receive[idx];
+ var chs=p?(p.reach==="B"?"WhatsApp + email":p.reach==="W"?"WhatsApp":"Email"):"";
+ return "<h1>New campaign</h1>"+steps(["Audience","Message","Check and send"],2)+how("Step 3: check the real messages, one person at a time, then send. Quiet hours (9 PM to 8 AM) hold sends until the morning. Above 200 people you must type the number to confirm.")+
+ '<div class="two"><div class="box"><div class="row" style="justify-content:space-between"><button class="b" onclick="S.sendI=Math.max(0,S.sendI-1);render()">‹</button><span class="small">Person '+(n?idx+1:0)+' of '+n+'</span><button class="b" onclick="S.sendI=Math.min(n-1,S.sendI+1);render()">›</button></div>'+
+ (p?'<div class="preview" style="box-shadow:none;margin-top:10px"><div class="lbl">'+p.name+' · '+chs+'</div>'+(S.ch!=="WhatsApp"?'<p style="font-weight:700">'+S.subj+'</p>':'')+'<p>'+S.txt.replace(/\{\{Name\}\}/g,p.name.split(" ")[0]).replace(/\{\{College\}\}/g,p.col).replace(/\{\{EventName\}\}/g,"Tech Fest 2026").replace(/\{\{RegistrationLink\}\}/g,"techfest.college.edu/register")+'</p></div>':'<p class="small">Nobody in this audience can receive this channel.</p>')+
+ '<div class="h2" style="margin-top:14px">Automatic checks</div><div class="row"><span class="chip g">Message length OK</span><span class="chip g">Link works</span>'+(S.photo?'<span class="chip g">Photo under 5 MB</span>':'')+(S.ch!=="WhatsApp"?'<span class="chip g">Unsubscribe link added</span>':'')+'</div>'+
+ '<div class="row"><button class="b" onclick="toast(\'Test message sent to you\')">Send a test to me</button></div></div>'+
+ '<div class="box"><div class="h2">Summary</div><table><tr><td class="small">Audience</td><td><b>'+audLabel(S.aud)+'</b></td></tr><tr><td class="small">Channel</td><td><b>'+S.ch+'</b></td></tr><tr><td class="small">Will receive</td><td><b>'+n+'</b> people · '+r.left+' left out</td></tr><tr><td class="small">Photo</td><td>'+(S.photo?"banner.jpg":"none")+'</td></tr><tr><td class="small">When</td><td>Now (held until 9 PM–8 AM ends)</td></tr></table>'+
+ '<label style="margin-top:14px"><input type="checkbox" '+(S.checked?"checked":"")+' onchange="S.checked=this.checked;render()"> I have checked the preview and the audience</label>'+
+ (needType?'<div style="margin-top:14px"><div class="small">More than 200 people. Type '+n+' to confirm:</div><input value="'+S.typed+'" placeholder="'+n+'" oninput="S.typed=this.value;render()" style="margin-top:6px"></div>':'<div class="small" style="margin-top:12px">'+n+' people, so no typed confirmation is needed (only above 200).</div>')+
+ '<div class="row" style="justify-content:space-between;margin-top:18px"><button class="b" onclick="go(\'S9\')">Back to message</button><button class="p" '+(ok&&n?"":"disabled")+' onclick="sendNow()">Send to '+n+'</button></div></div></div>';
+}
+function sendNow(){
+ var r=audStats(S.aud,S.ch);var ids=r.receive.map(function(x){return x.id});
+ var name=audLabel(S.aud);
+ S.camps.push({id:"C"+S.camps.length,name:name,ch:S.ch,ids:ids,fails:[],pending:ids.slice(),state:"sending",when:"now"});
+ logEv("Send",ids.length+" messages queued · "+name+" · "+S.ch);
+ S.aud=null;S.ch=null;S.checked=false;S.typed="";S.sendI=0;
+ S.prog=S.camps[S.camps.length-1].id;
+ go("S11");toast("Campaign queued (test mode)");
+}
+function advance(cid,n){var c=S.camps.filter(function(x){return x.id===cid})[0];if(!c||c.state==="paused"||c.state==="stopped"||c.state==="done")return;var take=c.pending.splice(0,n);if(!take.length){c.state="done";render();return}var sent=take.length;logEv("Send",sent+" messages sent · "+c.name);if(!c.pending.length){c.state="done";logEv("Done",c.name+" finished")}render();toast(sent+" messages sent")}
+function togglePause(cid){var c=S.camps.filter(function(x){return x.id===cid})[0];if(c.state==="sending"){c.state="paused";toast("Paused. Nothing more is sent until you resume.")}else if(c.state==="paused"){c.state="sending";toast("Resumed")}render()}
+function stopCamp(cid){var c=S.camps.filter(function(x){return x.id===cid})[0];var left=c.pending.length;c.pending=[];c.ids=c.ids.filter(function(x){return true});c.state="stopped";logEv("Stop",c.name+" stopped. "+left+" not sent.");render();toast("Stopped. "+left+" not sent")}
+/* ---------- S11 Progress ---------- */
+function S11(){
+ var c=S.camps.filter(function(x){return x.id===S.prog})[0]||S.camps[S.camps.length-1];
+ var d=cDel(c),sent=cSent(c),q=(c.pending||[]).length;
+ var controls= c.state==="done"?'<span class="chip g">All messages sent</span>':c.state==="stopped"?'<span class="chip r">Stopped · '+q+' not sent</span>':
+   '<button class="b" onclick="togglePause(\''+c.id+'\')">'+(c.state==="paused"?"Resume":"Pause")+'</button><button class="d" onclick="stopCamp(\''+c.id+'\')">Stop</button><button class="p" '+(c.state==="paused"?"disabled":"")+' onclick="advance(\''+c.id+'\',60)">Send next 60 (one minute)</button>';
+ return "<h1>Campaign progress</h1>"+how("Messages leave at 60 a minute. <b>Pause</b> holds the rest, <b>Resume</b> continues, <b>Stop</b> ends it and leaves the rest unsent. Failed messages can be retried or fixed in the Failed tab.")+
+ '<div class="row">'+S.camps.map(function(x){return '<span class="chip '+(c.id===x.id&&S.prog!=="fail"?"on":"")+'" onclick="S.prog=\''+x.id+'\';render()">'+x.name+'</span>'}).join("")+'<span class="chip '+(S.prog==="fail"?"on":"")+'" onclick="S.prog=\'fail\';render()">Failed messages</span></div>'+
+ (S.prog==="fail"?failTable():
+ '<div class="box"><div class="row" style="justify-content:space-between"><div><div class="h2" style="font-size:19px;margin:0">'+c.name+'</div><div class="small">'+c.ch+' · '+c.when+'</div></div><div class="row" style="margin:0">'+controls+'</div></div>'+
+ '<div class="bar" style="height:10px"><i style="width:'+pct(sent,c.ids.length)+'%"></i></div><div class="small">'+sent+' of '+c.ids.length+' sent · '+pct(sent,c.ids.length)+'%</div>'+
+ '<div class="grid" style="margin-top:18px">'+stat("Delivered",d,"")+stat("Failed",c.fails.length,"see Failed messages")+stat("Queued",q,"waiting to send")+'</div>'+
+ '<div class="row" style="margin-top:16px"><button class="b" onclick="retryCamp(\''+c.id+'\')" '+(c.fails.length?"":"disabled")+'>Retry failed ('+c.fails.length+')</button></div></div>'+
+ '<div class="box"><div class="h2">Message by message</div><table><tr><th>Name</th><th>Channel</th><th>Status</th></tr>'+c.ids.map(function(id){var r=R(id),f=c.fails.indexOf(id)>=0,qd=(c.pending||[]).indexOf(id)>=0;var t=f?'<span class="chip r">Failed · '+(FAILWHY[id]||"Bad email address")+'</span>':qd?'<span class="chip a">Queued</span>':'<span class="chip g">Delivered</span>';return '<tr><td>'+r.name+'</td><td class="small">'+REACHTXT[r.reach]+'</td><td>'+t+'</td></tr>'}).join("")+'</table></div>');
+}
+function failTable(){
+ var fl=failedList();
+ return '<div class="box">'+(fl.length?'<table><tr><th>Name</th><th>Reason</th><th>Campaign</th><th></th></tr>'+fl.map(function(f){return '<tr><td><b>'+R(f.id).name+'</b></td><td>'+(FAILWHY[f.id]||"Bad email address")+'</td><td class="small">'+f.camp.name+'</td><td><button class="b" onclick="fixOne('+f.id+',\''+f.camp.id+'\')">Fix contact</button> <button class="p" onclick="retryOne('+f.id+',\''+f.camp.id+'\')">Retry</button></td></tr>'}).join("")+'</table>':'<p class="small">No failed messages.</p>')+'</div>';
+}
+function retryOne(id,cid){var c=S.camps.filter(function(x){return x.id===cid})[0];c.fails=c.fails.filter(function(x){return x!==id});hist(id,"Message retried and delivered");logEv("Retry",R(id).name+" retried and delivered");render();toast("Retried")}
+function fixOne(id,cid){toast("Contact updated. The message retries automatically.");retryOne(id,cid)}
+function retryCamp(cid){var c=S.camps.filter(function(x){return x.id===cid})[0];var n=c.fails.length;c.fails.forEach(function(id){hist(id,"Message retried and delivered")});c.fails=[];logEv("Retry",n+" failed messages retried in "+c.name);render();toast("Retried "+n+" messages")}
+
+/* ---------- S12 Groups ---------- */
+function S12(){
+ var gs=allGroups();
+ var k=S.gsel||"all";
+ var g=gs.filter(function(x){return x.key===k})[0]||gs[0];
+ var ids=k==="all"?rows.map(function(r){return r.id}):k==="interested"?rows.filter(function(r){return r.st==="I"}).map(function(r){return r.id}):k==="notreplied"?rows.filter(function(r){return r.st==="-"}).map(function(r){return r.id}):(S.members[k]||[]);
+ return "<h1>Groups</h1>"+how("Groups are lists inside ORCA, used to choose audiences. <b>Smart</b> groups follow a rule and update by themselves. <b>Static</b> groups change only when you add or remove people. Create one here, or from Contacts with Add to group.")+
+ '<div class="two" style="grid-template-columns:300px 1fr"><div class="box" style="padding:10px">'+gs.map(function(x){return '<div onclick="S.gsel=\''+x.key+'\';render()" class="gi '+(x.key===g.key?"on":"")+'"><b>'+x.name+'</b><div class="small">'+x.kind+' · '+x.n+' people</div></div>'}).join("")+
+ '<div class="row" style="margin:12px 4px 4px"><input id="newg2" placeholder="New group name" style="flex:1"><button class="b" onclick="S.groups.push({key:\'g\'+(S.groups.length+1),name:$(\'newg2\').value||\'Untitled\'});S.members[\'g\'+S.groups.length]=[];render()">Create</button></div></div>'+
+ '<div class="box"><div class="h2" style="font-size:18px">'+g.name+'</div><span class="chip bl">'+g.kind+'</span> <span class="small">Rule: '+g.rule+'</span>'+
+ '<div class="grid" style="margin:16px 0">'+stat("Members",ids.length,"")+stat("Can receive",ids.filter(function(i){return reachOK(R(i),null)&&!R(i).opt}).length,"reachable on a channel")+'</div>'+
+ '<div class="row"><button class="p" onclick="S.aud={type:\'group\',key:\''+g.key+'\'};S.ch=null;go(\'S8\')">Create campaign from this group</button></div>'+
+ '<table style="margin-top:12px"><tr><th>Name</th><th>College</th><th>Status</th></tr>'+ids.slice(0,50).map(function(i){var r=R(i);return '<tr><td><b>'+r.name+'</b></td><td>'+r.col+'</td><td>'+chipFor(r.opt?"O":r.st)+'</td></tr>'}).join("")+'</table></div></div>';
+}
+
+/* ---------- S13 Inbox ---------- */
+function S13(){
+ var all=rows.filter(function(r){return r.replied});
+ var tabs=[["All",all.length],["Interested",repCnt("I")],["Questions",repCnt("Q")],["Needs review",repCnt("U")],["Declined",repCnt("D")],["Opted out",repCnt("O")]];
+ var list=all.filter(function(r){var t=S.inboxTab;if(t==="All")return true;if(t==="Interested")return r.st==="I";if(t==="Questions")return r.st==="Q";if(t==="Needs review")return r.st==="U";if(t==="Declined")return r.st==="D";return r.st==="O"});
+ var sel=S.inboxId?R(S.inboxId):null;
+ if(sel&&list.indexOf(sel)<0&&list.length)sel=null;
+ return "<h1>Inbox</h1>"+how("Every reply in one list. Pick a reply on the left. Questions get an answer (an approved FAQ answer, or your own). Undecided replies need a label. Opt-outs are handled automatically.")+
+ '<div class="row">'+tabs.map(function(t){return '<span class="chip '+(S.inboxTab===t[0]?"on":"")+'" onclick="S.inboxTab=\''+t[0]+'\';S.inboxId=null;render()">'+t[0]+' <span class="c">'+t[1]+'</span></span>'}).join("")+'</div>'+
+ '<div class="two" style="grid-template-columns:320px 1fr;margin-top:8px"><div class="box" style="padding:8px">'+(list.length?list.map(function(r){return '<div class="rp '+(sel&&sel.id===r.id?"on":"")+'" onclick="S.inboxId='+r.id+';render()"><div class="row" style="justify-content:space-between;margin:0"><b>'+r.name+'</b><span class="small">'+r.time+'</span></div><div class="small">'+chipFor(r.st).replace('class="chip','class="chip" style="font-size:11px" data-x="').replace('data-x="','')+'</div></div>'}).join(""):'<p class="small" style="padding:12px">No replies in this list.</p>')+'</div>'+
+ '<div class="box">'+(sel?replyPanel(sel):'<p class="small">Pick a reply on the left.</p>')+'</div></div>';
+}
+function faqFor(topic){return S.faq.filter(function(f){return f.topic===topic&&f.status==="Approved"})[0]}
+function replyPanel(r){
+ var fa=r.st==="Q"?faqFor(r.topic):null;
+ var ans=S.answers[r.id];
+ var h='<div class="row" style="justify-content:space-between"><div><b style="font-size:18px">'+r.name+'</b> <span class="small">· '+r.col+' · '+REACHTXT[r.reach]+'</span></div>'+(S.answered[r.id]?'<span class="chip g">Answered</span>':chipFor(r.st))+'</div>';
+ h+='<div class="msg">'+r.txt+(r.photo?'<div class="photo" style="width:120px;height:80px;margin-top:8px">ID card · tap to view</div>':'')+' <div class="small">'+r.time+'</div></div>';
+ if(ans)h+='<div class="msg me">'+ans+'</div>';
+ if(r.st==="Q"){
+  if(S.answered[r.id])return h+'<p class="small">Answered. You can still send another reply.</p>';
+  if(fa)return h+'<div class="box" class="tint b" style="box-shadow:none;margin-top:12px"><div class="lbl">Suggested answer · approved FAQ</div><p>'+fa.a+'</p><div class="row"><button class="p" onclick="answerWith('+r.id+',\''+fa.a.replace(/'/g,"\\'")+'\',\''+fa.topic+'\')">Approve and send</button><button class="b" onclick="S.draft=\''+fa.a.replace(/'/g,"\\'")+'\';render()">Edit first</button></div></div>';
+  return h+'<div class="box" class="tint a" style="box-shadow:none;margin-top:12px"><div class="lbl">No approved FAQ answer for this question</div><p class="small">Write a reply yourself below. To make future replies automatic, add and approve an answer on the FAQ page.</p></div>'+replyBox(r);
+ }
+ if(r.st==="U")return h+'<div class="box" class="tint a" style="box-shadow:none;margin-top:12px"><div class="lbl">ORCA was not sure ('+r.conf+'% sure)</div><p class="small">Choose the right label. It moves this person to the matching group and removes them from Needs review.</p><div class="row">'+["I","Q","D"].map(function(x){return '<button class="b" onclick="setStatus('+r.id+',\''+x+'\')">'+LABEL[x]+'</button>'}).join("")+'</div></div>';
+ if(r.st==="I")return h+'<div class="box" class="tint g" style="box-shadow:none;margin-top:12px"><div class="lbl">Interested · ORCA '+r.conf+'% sure</div><p class="small">Start a follow-up for every interested person. Change the label if you disagree.</p><div class="row"><button class="p" onclick="startFollowUp()">Create follow-up for Interested</button><button class="b" onclick="setStatus('+r.id+',\'U\')">Mark undecided</button></div></div>';
+ if(r.st==="D")return h+'<div class="row" style="margin-top:12px"><span class="small">Declined. Change the label if they change their mind:</span><button class="b" onclick="setStatus('+r.id+',\'I\')">Mark interested</button></div>';
+ return h+(S.reverseFor===r.id?reverseForm(r.id):'<div class="tint r"><div class="lbl">Opted out after replying STOP</div><p class="small">They will never be messaged again. You can reverse it only with a reason.</p><button class="b" onclick="reverseOpt('+r.id+')">Reverse opt-out (needs a reason)</button></div>');
+}
+function replyBox(r){return '<div class="row" style="margin-top:14px"><textarea id="rb" style="min-height:70px" placeholder="Write a reply to '+r.name.split(" ")[0]+'…">'+(S.draft||"")+'</textarea></div><div class="row" style="justify-content:flex-end"><button class="p" onclick="answerWith('+r.id+',$(\'rb\').value,null)">Send reply</button></div>'}
+function answerWith(id,text,topic){
+ if(!text){toast("Write a reply first");return}
+ var r=R(id);S.answered[id]=true;S.answers[id]=text;S.draft="";
+ if(topic)S.sugSent[topic]=(S.sugSent[topic]||0)+1;
+ logEv("Reply sent",r.name+" answered"+(topic?" with approved FAQ":" by hand"));render();toast("Reply sent to "+r.name);
+}
+
+/* ---------- S14 FAQ ---------- */
+function S14(){
+ var appr=S.faq.filter(function(f){return f.status==="Approved"}).length;
+ var coord=S.role==="Coordinator";
+ return "<h1>FAQ & auto-reply</h1>"+how("Write a question and its answer, then save it as a draft. Only a coordinator can approve it. Approved answers appear as suggestions in the Inbox for matching questions. Drafts are never sent.")+
+ '<div class="grid" style="margin-bottom:16px">'+stat("Approved",appr,"ready to suggest")+stat("Drafts",S.faq.length-appr,"need approval")+stat("Sent from FAQ",Object.keys(S.sugSent).reduce(function(a,k){return a+S.sugSent[k]},0),"times")+'</div>'+
+ '<div class="box"><div class="h2">Add a question and answer</div><div class="row"><input id="fq" placeholder="Question, e.g. Is lunch included?" style="flex:1"></div><div class="row"><textarea id="fa" style="min-height:64px" placeholder="Answer (only official information)"></textarea></div><div class="row" style="justify-content:space-between"><span class="small">Saved as Draft. Nothing is sent until approved.</span><button class="p" onclick="addFaq()">Save as draft</button></div></div>'+
+ '<div class="box"><table><tr><th>Question</th><th>Answer</th><th>Status</th><th>Used</th><th></th></tr>'+S.faq.map(function(f,i){return '<tr><td><b>'+f.q+'</b></td><td class="small">'+f.a+'</td><td>'+(f.status==="Approved"?'<span class="chip g">Approved</span>':'<span class="chip">Draft</span>')+'</td><td>'+(f.topic?(S.sugSent[f.topic]||0):0)+'</td><td>'+(f.status==="Approved"?'':'<button class="p '+(coord?"":"lock")+'" '+(coord?"":"disabled")+' title="Coordinators only" onclick="S.faq['+i+'].status=\'Approved\';logEv(\'FAQ\',\'Approved for use: '+f.q.replace(/'/g,"")+'\');render();toast(\'Approved\')">Approve for use'+(coord?"":" · coordinator")+'</button>')+'</td></tr>'}).join("")+'</table>'+
+ '<div class="small" style="margin-top:10px">Current role: <b>'+S.role+'</b>. '+(coord?"You can approve answers.":"Switch to Coordinator (top right) to approve answers.")+'</div></div>'+
+ '<div class="box"><div class="h2">Auto-reply</div><div class="small">Off by default. When off, ORCA only suggests the approved answer and you press Approve and send.</div><div class="row"><button class="'+(coord?"p":"b lock")+'" '+(coord?"":"disabled")+' onclick="toggleAuto()">'+(S.auto?"Switch off":"Switch on")+'</button><span class="chip '+(S.auto?"g":"")+'">'+(S.auto?"On":"Off")+'</span>'+(coord?"":'<span class="small">Coordinators only</span>')+'</div></div>';
+}
+function addFaq(){var q=$("fq").value.trim(),a=$("fa").value.trim();if(!q||!a){toast("Add both a question and an answer");return}S.faq.push({q:q,a:a,topic:"",status:"Draft"});logEv("FAQ","Draft added: "+q);render();toast("Saved as draft")}
+
+/* ---------- S15 Activity log ---------- */
+function S15(){
+ var t=S.logTab;
+ var f=S.log.filter(function(e){if(t==="All")return true;if(t==="Sends")return e.k==="Send"||e.k==="Retry";if(t==="Replies")return e.k==="Reply"||e.k==="Reply sent";if(t==="Opt-outs")return e.k.indexOf("Opt-out")===0;return ["Status","Group","Exclude","Export","FAQ","Import"].indexOf(e.k)>=0});
+ return "<h1>Activity log</h1>"+how("A record of what happened, newest first. A reply line shows ORCA’s label and how sure it was (for example <b>Interested (94% sure)</b>). This is a record, not a notification. Open a contact to see the same history in their profile.")+
+ '<div class="row">'+["All","Sends","Replies","Opt-outs","Changes"].map(function(x){return '<span class="chip '+(t===x?"on":"")+'" onclick="S.logTab=\''+x+'\';render()">'+x+'</span>'}).join("")+'</div>'+
+ '<div class="box"><table><tr><th>Time</th><th>What happened</th><th>Detail</th><th>By</th></tr>'+f.slice(0,40).map(function(e){return '<tr><td>'+e.t+'</td><td><span class="chip">'+e.k+'</span></td><td>'+e.txt+'</td><td class="small">'+e.by+'</td></tr>'}).join("")+'</table></div>';
+}
+
+/* ---------- S16-S18 Settings ---------- */
+function S16(){return "<h1>Event setup</h1>"+how("Event details fill the message placeholders, so one change updates every message. Closing the event makes it read-only.")+
+ '<div class="box"><div class="two"><label style="flex-direction:column;align-items:stretch;gap:6px">Event name<input value="Tech Fest 2026"></label><label style="flex-direction:column;align-items:stretch;gap:6px">Date<input value="14 Nov 2026"></label><label style="flex-direction:column;align-items:stretch;gap:6px">Registration link<input value="techfest.college.edu/register"></label><label style="flex-direction:column;align-items:stretch;gap:6px">Quiet hours<input value="9 PM to 8 AM (no sending)"></label></div></div>'+
+ '<div class="box"><div class="h2">Close event</div><p class="small">Exports data, archives campaigns, keeps the do-not-contact record, and makes the event read-only.</p><button class="b '+(S.role==="Coordinator"?"":"lock")+'" '+(S.role==="Coordinator"?"":"disabled")+' onclick="toast(\'Event closed (demo)\')">Close event'+(S.role==="Coordinator"?"":" · coordinators only")+'</button></div>'}
+function S17(){return "<h1>Team</h1>"+how("Coordinators invite people and change roles. Volunteers see this list with the controls locked.")+
+ '<div class="box"><div class="row" style="justify-content:space-between"><div class="small">3 people in this event</div><button class="p '+(S.role==="Coordinator"?"":"lock")+'" '+(S.role==="Coordinator"?"":"disabled")+' onclick="toast(\'Invite sent (demo)\')">+ Invite person</button></div>'+
+ '<table><tr><th>Name</th><th>Role</th><th>Contacts</th></tr>'+TEAM_PEOPLE.map(function(p){return '<tr><td><b>'+p.name+'</b></td><td>'+p.role+'</td><td>'+p.contacts+'</td></tr>'}).join("")+'</table></div>'}
+function S18(){return "<h1>Channels & privacy</h1>"+how("Test mode means no real messages are sent. Retention decides how long contact data is kept after the event. This is still an open decision.")+
+ '<div class="two"><div class="box"><div class="h2">Channels</div><div class="row" style="justify-content:space-between"><b>WhatsApp</b><span class="chip g">Mock · active</span></div><div class="row" style="justify-content:space-between"><b>Email</b><span class="chip g">Mock · active</span></div><div class="row" style="margin-top:14px"><label><input type="checkbox" '+(S.testMode!==false?"checked":"")+' '+(S.role==="Coordinator"?"":"disabled")+' onchange="S.testMode=this.checked;render()"> Test mode (banner on every page)</label></div><div class="small">Speed limit: 60 messages a minute. Real providers are not connected until Phase 5.</div></div>'+
+ '<div class="box"><div class="h2">Data retention</div><div class="small">Keep contact data for 12 months after the event (open decision). Opted-out people stay on the do-not-contact list.</div><div class="grid" style="margin-top:12px">'+stat("Would be deleted",rows.length,"contacts after 12 months")+stat("Kept",rows.filter(function(r){return r.opt}).length,"do-not-contact")+'</div></div></div>'}
+
+/* ---------- render ---------- */
+var SCREENS={S1:S1,S2:S2,S3:S3,S4:S4,S5:S5,S6:S6,S7:S7,S8:S8,S9:S9,S10:S10,S11:S11,S12:S12,S13:S13,S14:S14,S15:S15,S16:S16,S17:S17,S18:S18};
+function render(){
+ var m=$("main"),keep=m.scrollTop,inApp=S.loggedIn;
+ $("testPill").style.display=S.testMode===false?"none":"";
+ $("nav").style.display=inApp?"":"none";
+ $("shellEl").style.display="";
+ $("rolebar").innerHTML=(inApp?roleSeg():"")+'<button class="theme" onclick="toggleTheme()" title="Switch light and dark">'+(S.dark?"☀ Light":"☾ Dark")+'</button>';
+ if(inApp){nav();$("nav").innerHTML+='<div class="navfoot"><div class="me"><span class="av">AR</span><div><div class="mn1">Advaith Reddy</div><div class="small">'+S.role+'</div></div></div><button class="so" onclick="signOut()">Sign out</button></div>'}else $("nav").innerHTML="";
+ m.style.padding=inApp?"":"0";
+ m.innerHTML=(inApp?'<div class="eyebrow">'+sectionOf(S.view)+'</div>':'')+((!inApp)?S1:(SCREENS[S.view]||S2))();
+ m.scrollTop=keep;
+ $("overlay").innerHTML=(inApp&&S.view==="S3")?panelOverlay():"";
+}
+
+function toggleTheme(){S.dark=!S.dark;document.documentElement.setAttribute('data-theme',S.dark?'dark':'light');render()}
+
+function toggleAuto(){
+ S.auto=!S.auto;
+ if(S.auto){
+  var n=0;
+  rows.forEach(function(r){if(r.replied&&r.st==="Q"&&!S.answered[r.id]){var f=faqFor(r.topic);if(f){S.answered[r.id]=true;S.answers[r.id]=f.a;S.sugSent[f.topic]=(S.sugSent[f.topic]||0)+1;n++;logEv("Auto-reply",r.name+" got the approved answer automatically")}}});
+  toast(n?n+" approved answers sent automatically":"Auto-reply on. No waiting question has an approved answer yet.");
+ } else toast("Auto-reply off. ORCA only suggests answers now.");
+ render();
+}
+function sectionOf(v){return {S2:"Overview",S3:"Contacts",S4:"Contacts",S5:"Contacts",S6:"Contacts",S7:"Campaigns",S8:"Campaigns",S9:"Campaigns",S10:"Campaigns",S11:"Campaigns",S12:"Organise",S13:"Replies",S14:"Replies",S15:"Organise",S16:"Settings",S17:"Settings",S18:"Settings"}[v]||""}
+
+// STORE AND PERMISSIONS: accounts, sample events, saving to the browser, who can change what, contacts add/edit/delete, groups.
+/* ===================== v4: accounts, events, storage, permissions, Excel ===================== */
+var TEAM_FIXED=TEAM_PEOPLE;
+var STORE_KEY="orca_mock_v4",SESS_KEY="orca_mock_session_v4";
+var USERS=[{name:"Advaith Reddy",email:"advaith@college.edu",role:"Volunteer"},{name:"Joel Thomas",email:"joel@college.edu",role:"Volunteer"},{name:"Meera Pillai",email:"meera@college.edu",role:"Coordinator"}];
+var EVENTS=[],ACTIVE=null,ME=null;
+var FNAME=function(n){return n.split(" ")[0]};
+function digitsPh(v){var d=String(v||"").replace(/\D/g,"");if(d.length===12&&d.indexOf("91")===0)d=d.slice(2);return d}
+function mkRow(r,owner){return {replied:r[4]!=="-",id:r[0],name:r[1],col:r[2],reach:r[3],st:r[4],fail:r[5]===1,conf:r[6],time:r[7],txt:r[8],photo:r[9]===1,topic:r[10]||"",opt:r[4]==="O",excl:false,owner:owner,ph:"+91 9"+String(100000000+r[0]*3137).slice(0,9),em:r[1].toLowerCase().replace(/[^a-z]+/g,".").replace(/^\.|\.$/g,"")+"@students.edu"}}
+function mkSeed(list){return list.map(function(x,i){var id=i+1;return {replied:x[3]!=="-",id:id,name:x[0],col:x[1],reach:x[2],st:x[3],fail:!!x[7],conf:x[4]||0,time:x[5]||"",txt:x[6]||"",photo:false,topic:x[8]||"",opt:x[3]==="O",excl:false,owner:x[9],ph:"+91 9"+String(200000000+id*4421).slice(0,9),em:x[0].toLowerCase().replace(/[^a-z]+/g,".").replace(/^\.|\.$/g,"")+"@students.edu"}})}
+function reachIds(rs){return rs.filter(function(r){return ["B","W","E"].indexOf(r.reach)>=0&&!r.opt}).map(function(r){return r.id})}
+function faqSeed(){return [{id:"f1",q:"Is there an entry fee?",a:"Free for all students. Registration is needed.",topic:"fee",status:"Approved",source:"site",owner:"Advaith Reddy"},{id:"f2",q:"Where is the venue?",a:"Main auditorium, Block C, IIT Madras.",topic:"venue",status:"Approved",source:"site",owner:"Advaith Reddy"},{id:"f3",q:"Can I bring a friend?",a:"Each person must register separately.",topic:"friend",status:"Approved",source:"site",owner:"Advaith Reddy"},{id:"f4",q:"Is accommodation provided?",a:"Waiting for the organisers’ answer.",topic:"accommodation",status:"Draft",source:"site",owner:"Advaith Reddy"}]}
+function techData(){var rs=RAW.map(function(r){return mkRow(r,"Advaith Reddy")});return {rows:rs,camps:[{id:"R1",name:"Round 1 outreach",ch:"Both",ids:reachIds(rs),fails:[19,28],pending:[],state:"done",when:"23 Oct, 10:20",owner:"Advaith Reddy"}],groups:[],members:{},faq:faqSeed(),faqDoc:null,sugSent:{},answered:{},answers:{},log:[{t:"10:20",k:"Send",txt:"Round 1 outreach · 45 messages sent · 43 delivered · 2 failed",by:"Advaith Reddy"},{t:"10:58",k:"Opt-out",txt:"Aarav Mehta replied STOP · opted out",by:"System"}],hist:{}}}
+function alumniData(){var rs=mkSeed([
+ ["Priya Menon","Alumni 2019 batch","B","I",92,"09:12","Yes, I will attend. Is dinner included?",0,"","Advaith Reddy"],
+ ["Sanjay Rao","Alumni 2017 batch","B","I",88,"10:40","Count me in.",0,"","Advaith Reddy"],
+ ["Kiran Joseph","Alumni 2018 batch","W","Q",81,"11:05","Where is the parking?",0,"","Advaith Reddy"],
+ ["Divya Nair","Alumni 2020 batch","E","U",55,"12:20","Maybe, depends on work travel.",0,"","Advaith Reddy"],
+ ["Rohit Verma","Alumni 2016 batch","B","-",0,"","",0,"","Advaith Reddy"],
+ ["Lakshmi Iyer","Alumni 2015 batch","B","D",95,"13:10","Sorry, not this time.",0,"","Advaith Reddy"],
+ ["Vivek Shetty","Alumni 2019 batch","B","I",90,"14:00","Interested, please send details.",0,"","Joel Thomas"],
+ ["Anjali Pillai","Alumni 2021 batch","W","I",86,"15:25","Yes please!",0,"","Joel Thomas"],
+ ["Harish Kumar","Alumni 2014 batch","B","-",0,"","",0,"","Joel Thomas"],
+ ["Neha Bhat","Alumni 2020 batch","E","Q",79,"16:02","Is accommodation available?",0,"","Joel Thomas"],
+ ["Arun Das","Alumni 2013 batch","N","-",0,"","",0,"","Joel Thomas"],
+ ["Sudha Raman","Alumni 2018 batch","B","-",0,"","",1,"","Joel Thomas"]]);
+ return {rows:rs,camps:[{id:"R1",name:"Alumni invite",ch:"Both",ids:reachIds(rs),fails:[12],pending:[],state:"done",when:"28 Nov, 09:00",owner:"Advaith Reddy"}],groups:[],members:{},faq:[{id:"a1",q:"Is dinner included?",a:"Yes, dinner is included for registered alumni.",topic:"",status:"Draft",source:"site",owner:"Advaith Reddy"}],faqDoc:null,sugSent:{},answered:{},answers:{},log:[{t:"09:00",k:"Send",txt:"Alumni invite · 11 messages sent · 10 delivered · 1 failed",by:"Advaith Reddy"}],hist:{}}}
+function hackData(){var rs=mkSeed([
+ ["Tanya Shah","Hostel A","B","I",90,"10:02","Yes, I am in!",0,"","Meera Pillai"],
+ ["Varun Pillai","Hostel B","W","I",87,"10:30","Count me in.",0,"","Meera Pillai"],
+ ["Sneha Kulkarni","Hostel A","E","Q",80,"11:12","Is food provided?",0,"","Meera Pillai"],
+ ["Akash Menon","Hostel C","B","U",57,"12:00","Not sure, exams.",0,"","Meera Pillai"],
+ ["Ritu Das","Hostel B","B","-",0,"","",0,"","Meera Pillai"],
+ ["Harsha Vardhan","Hostel C","N","-",0,"","",0,"","Meera Pillai"],
+ ["Nisha Rao","Hostel A","B","D",94,"13:40","Not this time.",0,"","Meera Pillai"],
+ ["Omkar Joshi","Hostel B","W","-",0,"","",0,"","Meera Pillai"]]);
+ return {rows:rs,camps:[{id:"R1",name:"Round 1 · Hack Night",ch:"Both",ids:reachIds(rs),fails:[],pending:[],state:"done",when:"3 Mar 2025, 10:00",owner:"Meera Pillai"}],groups:[],members:{},faq:[],faqDoc:null,sugSent:{},answered:{},answers:{},log:[{t:"10:00",k:"Send",txt:"Round 1 · Hack Night · 7 messages sent",by:"Meera Pillai"}],hist:{}}}
+function seedEvents(){return [
+ {id:"techfest",name:"Tech Fest 2026",date:"14 Nov 2026",tz:"IST (UTC+5:30)",link:"techfest.college.edu/register",desc:"A two-day student festival of talks, workshops and a hackathon at IIT Madras.",status:"Active",data:techData()},
+ {id:"alumni",name:"Alumni Meet 2026",date:"5 Dec 2026",tz:"IST (UTC+5:30)",link:"alumnimeet.college.edu/rsvp",desc:"Annual alumni gathering and dinner.",status:"Active",data:alumniData()},
+ {id:"hack25",name:"Hack Night 2025",date:"30 Mar 2025",tz:"IST (UTC+5:30)",link:"hacknight.college.edu",desc:"Overnight coding event. Archived.",status:"Archived",data:hackData()}]}
+function evById(id){return EVENTS.filter(function(e){return e.id===id})[0]}
+function snapshot(){return {rows:rows,camps:S.camps,groups:S.groups,members:S.members,faq:S.faq,faqDoc:S.faqDoc,sugSent:S.sugSent,answered:S.answered,answers:S.answers,log:S.log,hist:S.hist}}
+function saveActive(){var e=evById(ACTIVE);if(e&&rows)e.data=snapshot()}
+function computeTeam(){
+ if(ACTIVE==="techfest")return TEAM_FIXED;
+ var camps=S.camps||[];
+ return USERS.map(function(u){
+  var mine=rows.filter(function(r){return r.owner===u.name});
+  var ids=mine.map(function(r){return r.id});
+  var sent=0,fail=0,queued=0;
+  camps.forEach(function(c){c.ids.forEach(function(id){if(ids.indexOf(id)>=0){sent++;if(c.fails.indexOf(id)>=0)fail++}});queued+=(c.pending||[]).filter(function(id){return ids.indexOf(id)>=0}).length});
+  var k=function(s){return mine.filter(function(r){return r.st===s}).length};
+  return {name:u.name,role:u.role,contacts:mine.length,sent:sent,delivered:sent-fail,failed:fail,queued:queued,replies:mine.filter(function(r){return r.replied}).length,I:k("I"),Q:k("Q"),U:k("U"),D:k("D"),O:mine.filter(function(r){return r.st==="O"}).length};
+ });
+}
+function loadEvent(id){
+ var e=evById(id);if(!e)return;
+ ACTIVE=id;rows=e.data.rows;S.camps=e.data.camps;S.groups=e.data.groups;S.members=e.data.members;S.faq=e.data.faq;S.faqDoc=e.data.faqDoc;S.sugSent=e.data.sugSent;S.answered=e.data.answered;S.answers=e.data.answers;S.log=e.data.log;S.hist=e.data.hist;
+ S.sel={};S.cpanel=null;S.inboxId=null;S.aud=null;S.ch=null;S.cForm=null;S.imp={file:null,issues:[],dec:{},fixed:{},consent:false,done:false,added:[]};
+ TEAM_PEOPLE=computeTeam();
+}
+function persist(){
+ saveActive();
+ try{localStorage.setItem(STORE_KEY,JSON.stringify({events:EVENTS,active:ACTIVE,users:USERS}))}catch(err){}
+ try{localStorage.setItem(SESS_KEY,ME?ME.email:"")}catch(err){}
+}
+function boot(){
+ var saved=null;try{saved=JSON.parse(localStorage.getItem(STORE_KEY)||"null")}catch(err){}
+ EVENTS=saved&&saved.events?saved.events:seedEvents();
+ if(saved&&saved.users)USERS=saved.users;
+ ACTIVE=null;
+ var email=null;try{email=localStorage.getItem(SESS_KEY)}catch(err){}
+ ME=USERS.filter(function(u){return u.email===email})[0]||null;
+ S.loggedIn=!!ME;S.user=ME;S.role=ME?ME.role:"Volunteer";
+ S.view=ME?"S0":"S1";
+ if(saved&&saved.active&&evById(saved.active)&&ME)loadEvent(saved.active);
+}
+/* permissions */
+function isC(){return !!ME&&ME.role==="Coordinator"}
+function canEdit(owner){return isC()||(!!ME&&owner===ME.name)}
+function scopeRows(){return (isC()&&S.scope==="team")?rows:rows.filter(function(r){return ME&&r.owner===ME.name})}
+function lockTag(owner){return canEdit(owner)?"":'<span class="chip">Owned by '+owner+' · read only</span>'}
+function guardRow(r){if(canEdit(r.owner))return true;toast("Only "+r.owner+" can change this contact");return false}
+/* overrides */
+function how(){return ""}
+function setRole(){}
+function roleSeg(){return ME?'<div class="role">Signed in as <b style="color:#fff">'+ME.name+'</b> · '+ME.role+'</div>':""}
+function greet(){return '<div class="hero"><div><h1 class="hh">Welcome back, '+FNAME(ME.name)+'</h1><div class="small">'+evById(ACTIVE).name+' · '+evById(ACTIVE).date+' · '+(isC()?"Coordinator":"Volunteer")+'</div></div><div class="heroSw">'+(isC()?'<span class="seg"><button class="'+(S.scope!=="team"?"on":"")+'" onclick="S.scope=\'mine\';render()">My work</button><button class="'+(S.scope==="team"?"on":"")+'" onclick="S.scope=\'team\';render()">Whole team</button></span>':'<span class="chip bl">Your work</span>')+'</div></div>'}
+function membersOf(a){
+ if(!a)return [];
+ if(a.type==="person")return rows.filter(function(r){return r.id===a.id});
+ var base=scopeRows();
+ if(isC()&&S.scope!=="team")base=rows.filter(function(r){return r.owner===ME.name});
+ if(a.key==="all")return base;
+ if(a.key==="interested")return base.filter(function(r){return r.st==="I"});
+ if(a.key==="notreplied")return base.filter(function(r){return r.st==="-"});
+ var ids=S.members[a.key]||[];return base.filter(function(r){return ids.indexOf(r.id)>=0});
+}
+function allGroups(){
+ var base=scopeRows();
+ return [{key:"all",name:"All contacts",kind:"Smart",rule:"Everyone imported",n:base.length},{key:"interested",name:"Interested participants",kind:"Smart",rule:"Status is Interested",n:base.filter(function(r){return r.st==="I"}).length},{key:"notreplied",name:"Not replied yet",kind:"Smart",rule:"Status is No reply yet",n:base.filter(function(r){return r.st==="-"}).length}].concat(S.groups.map(function(g){return {key:g.key,name:g.name,kind:"Static",rule:"Chosen by hand",n:(S.members[g.key]||[]).filter(function(id){return base.some(function(r){return r.id===id})}).length,owner:g.owner}}))
+}
+function setStatus(id,v){var r=R(id);if(!guardRow(r))return;if(r.opt){toast("Reverse the opt-out first");return}if(r.st===v)return;if(v==="-"&&r.replied){toast("They have replied, so they can’t go back to No reply yet");return}hist(id,"Status set to "+LABEL[v]+" by "+ME.name+(r.replied?"":" (no reply yet, marked by hand)"));logEv("Status",r.name+" set to "+LABEL[v]+(r.replied?"":" (marked by hand)"));r.st=v;if(v!=="Q")delete S.answered[id];render();toast(r.name+" is now "+LABEL[v])}
+function optOut(id){var r=R(id);if(!guardRow(r))return;r.opt=true;hist(id,"Opted out by hand");logEv("Opt-out",r.name+" opted out by hand");render();toast(r.name+" removed from every audience")}
+function confirmReverse(id){var r=R(id);if(!guardRow(r))return;var reason=(($("rv")||{}).value||"").trim();if(!reason){S.reverseErr="Write a reason first. It is logged.";render();return}r.opt=false;if(r.st==="O")r.st="U";S.reverseFor=null;hist(id,"Opt-out reversed: "+reason);logEv("Opt-out reversed",r.name+" · "+reason);render();toast("Opt-out reversed. Logged.")}
+function answerWith(id,text,topic){var r=R(id);if(!guardRow(r))return;if(!text){toast("Write a reply first");return}S.answered[id]=true;S.answers[id]=text;S.draft="";if(topic)S.sugSent[topic]=(S.sugSent[topic]||0)+1;logEv("Reply sent",r.name+" answered"+(topic?" with approved FAQ":" by hand"));render();toast("Reply sent to "+r.name)}
+function confirmAdd(){
+ var ids=Object.keys(S.sel).filter(function(k){return S.sel[k]}).map(Number);
+ var mine=ids.filter(function(i){return canEdit(R(i).owner)});
+ if(ids.length&&mine.length<ids.length)toast((ids.length-mine.length)+" contact(s) belong to someone else and were skipped");
+ var ticked=allGroups().filter(function(g){var el=$("g_"+g.key);return el&&el.checked&&g.kind!=="Smart"});
+ if(!ticked.length){toast("Tick a group first");return}
+ ticked.forEach(function(g){S.members[g.key]=(S.members[g.key]||[]).concat(mine.filter(function(i){return (S.members[g.key]||[]).indexOf(i)<0}))});
+ logEv("Group","Added "+mine.length+" people to "+ticked.map(function(g){return g.name}).join(", "));
+ S.addOpen=false;S.sel={};render();toast("Added "+mine.length+" people")
+}
+function excludeSel(){var ids=Object.keys(S.sel).filter(function(k){return S.sel[k]}).map(Number);var mine=ids.filter(function(i){return canEdit(R(i).owner)});if(ids.length&&mine.length<ids.length)toast((ids.length-mine.length)+" contact(s) belong to someone else and were skipped");mine.forEach(function(i){R(i).excl=true});logEv("Exclude","Excluded "+mine.length+" people from campaigns");S.sel={};render();toast("Excluded "+mine.length+" people")}
+function selAll(v){rows.forEach(function(r){if(canEdit(r.owner))S.sel[r.id]=v});render()}
+function deleteContact(id){var r=R(id);if(!canEdit(r.owner)){toast("Only "+r.owner+" can delete this contact");return}
+ rows=rows.filter(function(x){return x.id!==id});S.camps.forEach(function(c){c.ids=c.ids.filter(function(x){return x!==id});c.fails=c.fails.filter(function(x){return x!==id});c.pending=(c.pending||[]).filter(function(x){return x!==id})});
+ Object.keys(S.members).forEach(function(k){S.members[k]=S.members[k].filter(function(x){return x!==id})});
+ logEv("Delete",r.name+" deleted by "+ME.name);S.cpanel=null;S.cDel=null;render();toast("Contact deleted")}
+function openCForm(id){var r=id?R(id):null;if(r&&!guardRow(r))return;S.cForm={id:id||null,name:r?r.name:"",phone:r?digitsPh(r.ph):"",email:r?r.em:"",college:r?r.col:""};S.cFormErr="";S.cpanel=null;render();window.scrollTo&&0}
+function saveCForm(){
+ var f=S.cForm;var name=(($("cf_name")||{}).value||"").trim(),phone=digitsPh(($("cf_phone")||{}).value),email=(($("cf_email")||{}).value||"").trim(),college=(($("cf_college")||{}).value||"").trim();
+ if(!name){S.cFormErr="Name is required.";render();return}
+ if(phone.length!==10){S.cFormErr="Phone must have exactly 10 digits (you typed "+phone.length+").";render();return}
+ if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){S.cFormErr="That email address doesn’t look right.";render();return}
+ var reach=phone&&email?"B":phone?"W":email?"E":"N";
+ if(f.id){var r=R(f.id);if(!guardRow(r))return;r.name=name;r.ph="+91 "+phone;r.em=email;r.col=college;r.reach=reach;logEv("Edit",name+" details updated by "+ME.name)}
+ else{var nid=rows.reduce(function(m,x){return Math.max(m,x.id)},0)+1;rows.push({replied:false,id:nid,name:name,col:college,reach:reach,st:"-",fail:false,conf:0,time:"",txt:"",photo:false,topic:"",opt:false,excl:false,owner:ME.name,ph:"+91 "+phone,em:email});logEv("Add",name+" added by "+ME.name)}
+ S.cForm=null;S.cFormErr="";render();toast("Contact saved")
+}
+function contactForm(){var f=S.cForm;return '<div class="box"><div class="h2">'+(f.id?"Edit contact":"Add a contact")+'</div><div class="two"><label class="fl">Name<input id="cf_name" value="'+f.name+'" placeholder="Full name"></label><label class="fl">Phone (10 digits)<input id="cf_phone" value="'+f.phone+'" placeholder="98400 12345" inputmode="numeric"></label><label class="fl">Email<input id="cf_email" value="'+f.email+'" placeholder="name@college.edu"></label><label class="fl">College<input id="cf_college" value="'+f.college+'" placeholder="College or university"></label></div>'+(S.cFormErr?'<div class="err">'+S.cFormErr+'</div>':'')+'<div class="row" style="justify-content:flex-end"><button class="b" onclick="S.cForm=null;render()">Cancel</button><button class="p" onclick="saveCForm()">'+(f.id?"Save changes":"Add contact")+'</button></div></div>'}
+function panelHTML(r){
+ var mine=canEdit(r.owner),opts=r.replied?["I","Q","U","D"]:["-","I","Q","U","D"];
+ var stBox=r.opt?'<span class="small">Opted out · reverse it first</span>':'<select '+(mine?"":"disabled")+' onchange="setStatus('+r.id+',this.value)">'+opts.map(function(s){return '<option value="'+s+'" '+(r.st===s?"selected":"")+'>'+LABEL[s]+'</option>'}).join("")+'</select>';
+ var dis=mine?"":" disabled";
+ return '<div class="pn-head"><div><div class="h2" style="font-size:20px;margin:0">'+r.name+'</div><div class="small">'+r.col+' · '+r.em+' · '+r.ph+'</div></div><button class="b" onclick="closePanel()">Close</button></div>'+
+ '<div class="row" style="margin:10px 0"><span class="chip bl">'+REACHTXT[r.reach]+'</span>'+chipFor(r.opt?"O":r.st)+(r.excl?'<span class="chip">Excluded</span>':'')+'<span class="chip">Owner: '+r.owner+'</span></div>'+
+ (mine?"":'<div class="tint a"><div class="small">Read only. Only '+r.owner+' can change this contact.</div></div>')+
+ '<div class="row" style="margin:12px 0"><span class="small">Status:</span> '+stBox+'</div>'+
+ (S.reverseFor===r.id&&mine?reverseForm(r.id):'')+
+ '<div class="row" style="margin:0 0 14px"><button class="p" onclick="messageContact('+r.id+')">Message this person</button>'+
+ (r.opt?'<button class="b"'+dis+' onclick="reverseOpt('+r.id+')">Reverse opt-out</button>':'<button class="b"'+dis+' onclick="optOut('+r.id+')">Opt out</button>')+
+ '<button class="b"'+dis+' onclick="R('+r.id+').excl=!R('+r.id+').excl;render()">'+(r.excl?"Include again":"Exclude from campaigns")+'</button>'+
+ '<button class="b"'+dis+' onclick="openCForm('+r.id+')">Edit</button>'+
+ (S.cDel===r.id?'<button class="d" onclick="deleteContact('+r.id+')">Confirm delete</button><button class="b" onclick="S.cDel=null;render()">Keep</button>':'<button class="b"'+dis+' onclick="S.cDel='+r.id+';render()">Delete</button>')+'</div>'+
+ '<div class="h2" style="font-size:14px">Full history</div><div class="tl">'+timeline(r).map(function(t){return '<div class="tli"><span class="dot"></span><div><div class="small">'+t.when+'</div><div>'+t.txt+'</div></div></div>'}).join("")+'</div>';
+}
+function reverseForm(id){return '<div class="tint a"><div class="lbl">Reverse opt-out</div><p class="small">Only do this if the person asked to hear from us again. The reason is written to the log.</p><div class="row"><input id="rv" placeholder="Reason" style="flex:1"><button class="p" onclick="confirmReverse('+id+')">Confirm</button><button class="b" onclick="S.reverseFor=null;render()">Cancel</button></div>'+(S.reverseErr?'<div class="err">'+S.reverseErr+'</div>':'')+'</div>'}
+function S3(){
+ var tabs=[["All",rows.length],["Interested",cnt("I")],["Question",cnt("Q")],["Undecided",cnt("U")],["Declined",cnt("D")],["Opted out",rows.filter(function(r){return r.opt}).length],["No reply yet",rows.filter(function(r){return r.st==="-"&&!r.opt}).length]];
+ var list=rows.filter(function(r){if(S.ctab==="All")return true;if(S.ctab==="Opted out")return r.opt;if(S.ctab==="No reply yet")return r.st==="-"&&!r.opt;return LABEL[r.st]===S.ctab});
+ var mineSel=Object.keys(S.sel).filter(function(k){return S.sel[k]&&canEdit(R(Number(k)).owner)}).length,nSel=Object.keys(S.sel).filter(function(k){return S.sel[k]}).length;
+ return '<h1>Contacts</h1>'+(S.cForm?contactForm():'')+
+ '<div class="row" style="justify-content:space-between"><div>'+tabs.map(function(t){return '<span class="chip '+(S.ctab===t[0]?"on":"")+'" onclick="S.ctab=\''+t[0]+'\';render()">'+t[0]+' <span class="c">'+t[1]+'</span></span>'}).join("")+'</div><div class="row" style="margin:0"><button class="p" onclick="openCForm()">+ Add contact</button><button class="b" onclick="go(\'S4\')">Import Excel</button></div></div>'+
+ (nSel?'<div class="box" style="margin-top:12px"><div class="row" style="justify-content:space-between"><b>'+nSel+' selected'+(mineSel<nSel?' · '+mineSel+' are yours':'')+'</b><div class="row" style="margin:0"><button class="p" onclick="S.addOpen=!S.addOpen;render()">Add to group</button><button class="b" onclick="excludeSel()">Exclude from campaigns</button><button class="b" onclick="exportSel()">Export</button><button class="b" onclick="S.sel={};render()">Clear</button></div></div>'+(S.addOpen?addPanel():'')+'<div class="small" style="margin-top:8px">Add to group puts ticked people into a group. Exclude keeps them listed but out of campaigns. Export downloads them as a CSV file. You can only change contacts you own.</div></div>':'')+
+ '<div class="box" style="padding:6px 0 0"><div class="tblwrap"><table><tr><th><input type="checkbox" onchange="selAll(this.checked)"></th><th>Name</th><th>Reach</th><th>Status</th><th>Groups</th><th>Owner</th><th></th></tr>'+
+ list.map(function(r){var inG=S.groups.filter(function(g){return (S.members[g.key]||[]).indexOf(r.id)>=0}).map(function(g){return g.name});var mine=canEdit(r.owner);
+  return '<tr><td>'+(mine?'<input type="checkbox" '+(S.sel[r.id]?"checked":"")+' onchange="toggleSel('+r.id+')">':'')+'</td><td><b>'+r.name+'</b><div class="small">'+r.col+'</div></td><td><span class="chip '+(r.reach==="N"?"r":r.reach==="B"?"g":"bl")+'">'+REACHTXT[r.reach]+'</span></td><td>'+chipFor(r.opt?"O":r.st)+(r.excl?' <span class="chip">Excluded</span>':'')+'</td><td class="small">'+(inG.length?inG.join(", "):"—")+'</td><td class="small">'+(mine?"You":r.owner)+'</td><td><button class="b" onclick="openPanel('+r.id+')">Open</button></td></tr>'}).join("")+'</table></div></div>'}
+function addPanel(){return '<div class="addp"><div class="h2" style="font-size:14px">Choose a group</div>'+allGroups().map(function(g){var smart=g.kind==="Smart";return '<label style="display:flex;justify-content:space-between;width:100%;padding:6px 0"><span><input type="checkbox" '+(smart?"disabled":"")+' id="g_'+g.key+'"> '+g.name+'</span><span class="small">'+(smart?"Smart group · updates itself":g.n+" people")+'</span></label>'}).join("")+'<div class="row"><input id="newg" placeholder="New group name" style="flex:1"><button class="b" onclick="newGroup()">Create group</button></div><div class="row"><button class="p" onclick="confirmAdd()">Add selected people</button><button class="b" onclick="S.addOpen=false;render()">Cancel</button></div></div>'}
+function newGroup(){var n=($("newg").value||"").trim();if(!n){toast("Type a group name first");return}var k="g"+(S.groups.length+1)+"_"+Date.now();S.groups.push({key:k,name:n,owner:ME.name});S.members[k]=[];logEv("Group","Created group “"+n+"” by "+ME.name);render();toast("Group created: "+n)}
+function S12(){
+ var gs=allGroups();var k=S.gsel||"all";var g=gs.filter(function(x){return x.key===k})[0]||gs[0];
+ var base=scopeRows();var ids=g.key==="all"?base.map(function(r){return r.id}):g.key==="interested"?base.filter(function(r){return r.st==="I"}).map(function(r){return r.id}):g.key==="notreplied"?base.filter(function(r){return r.st==="-"}).map(function(r){return r.id}):(S.members[g.key]||[]).filter(function(id){return base.some(function(r){return r.id===id})});
+ var custom=g.kind==="Static";var own=custom&&(isC()||g.owner===ME.name);
+ return '<h1>Groups</h1>'+'<div class="two" style="grid-template-columns:300px 1fr"><div class="box" style="padding:10px">'+gs.map(function(x){return '<div onclick="S.gsel=\''+x.key+'\';S.gEdit=null;render()" class="gi '+(x.key===g.key?"on":"")+'"><b>'+x.name+'</b><div class="small">'+x.kind+' · '+x.n+' people</div></div>'}).join("")+
+ '<div class="row" style="margin:12px 4px 4px"><input id="newg2" placeholder="New group name" style="flex:1"><button class="b" onclick="newGroup2()">Create</button></div></div>'+
+ '<div class="box"><div class="row" style="justify-content:space-between"><div><div class="h2" style="font-size:18px;margin:0">'+(S.gEdit===g.key?'<input id="gr_name" value="'+g.name+'">':g.name)+'</div><span class="chip bl">'+g.kind+'</span> <span class="small">Rule: '+g.rule+(custom?' · Owner: '+(g.owner||"")+'':'')+'</span></div>'+
+ (own?'<div class="row" style="margin:0">'+(S.gEdit===g.key?'<button class="p" onclick="saveGroup(\''+g.key+'\')">Save name</button><button class="b" onclick="S.gEdit=null;render()">Cancel</button>':'<button class="b" onclick="S.gEdit=\''+g.key+'\';render()">Rename</button>')+(S.gDel===g.key?'<button class="d" onclick="deleteGroup(\''+g.key+'\')">Confirm delete</button>':'<button class="b" onclick="S.gDel=\''+g.key+'\';render()">Delete</button>')+'</div>':'')+'</div>'+
+ '<div class="grid" style="margin:16px 0">'+stat("Members",ids.length,"")+stat("Can receive",ids.filter(function(i){var r=R(i);return reachOK(r,null)&&!r.opt}).length,"reachable on a channel")+'</div>'+
+ '<div class="row"><button class="p" onclick="S.aud={type:\'group\',key:\''+g.key+'\'};S.ch=null;go(\'S8\')">Create campaign from this group</button></div>'+
+ '<table style="margin-top:12px"><tr><th>Name</th><th>College</th><th>Status</th><th>Owner</th></tr>'+ids.slice(0,60).map(function(i){var r=R(i);return '<tr><td><b>'+r.name+'</b></td><td>'+r.col+'</td><td>'+chipFor(r.opt?"O":r.st)+'</td><td class="small">'+r.owner+'</td></tr>'}).join("")+'</table></div></div>'}
+function newGroup2(){var n=(($("newg2")||{}).value||"").trim();if(!n){toast("Type a group name first");return}var k="g"+(S.groups.length+1)+"_"+Date.now();S.groups.push({key:k,name:n,owner:ME.name});S.members[k]=[];logEv("Group","Created group “"+n+"” by "+ME.name);render();toast("Group created")}
+function saveGroup(k){var g=S.groups.filter(function(x){return x.key===k})[0];var n=(($("gr_name")||{}).value||"").trim();if(!n){toast("Name can’t be empty");return}g.name=n;S.gEdit=null;logEv("Group","Renamed to “"+n+"”");render();toast("Group renamed")}
+function deleteGroup(k){S.groups=S.groups.filter(function(x){return x.key!==k});delete S.members[k];S.gDel=null;S.gsel="all";logEv("Group","Group deleted by "+ME.name);render();toast("Group deleted")}
+
+// SCREENS 2: events page, login, dashboard for the signed-in person, Excel and CSV import, campaigns (owner, delete), FAQ document and entries.
+/* ---------- events page ---------- */
+function S0(){
+ var cards=EVENTS.map(function(e){var rs=e.data.rows,rp=rs.filter(function(r){return r.replied}).length,ng=e.data.camps.length;
+  return '<div class="ev-card'+(e.status==="Archived"?" arch":"")+'"><div class="row" style="justify-content:space-between"><span class="chip '+(e.status==="Active"?"g":"")+'">'+e.status+'</span><span class="small">'+e.date+'</span></div><div class="h2" style="font-size:19px;margin:12px 0 4px">'+e.name+'</div><div class="small">'+e.desc+'</div>'+
+  '<div class="grid" style="grid-template-columns:repeat(3,1fr);margin:16px 0"><div class="mini"><span class="lbl">Contacts</span><b>'+rs.length+'</b></div><div class="mini"><span class="lbl">Replies</span><b>'+rp+'</b></div><div class="mini"><span class="lbl">Campaigns</span><b>'+ng+'</b></div></div>'+
+  '<div class="row"><button class="p" onclick="openEvent(\''+e.id+'\')">Open event</button></div></div>'}).join("");
+ return '<h1>Events</h1>'+'<p class="small" style="margin:-6px 0 18px">Pick an event to work on. Each event keeps its own contacts, groups, campaigns, replies and FAQ.</p>'+
+  '<div class="evgrid">'+cards+'</div>'+(isC()?manageEvents():'<div class="box"><div class="small">Only coordinators can add, edit or delete events. You can open any event and see all of its data.</div></div>');
+}
+function manageEvents(){
+ var f=S.evForm;
+ return '<div class="box" style="margin-top:8px"><div class="row" style="justify-content:space-between"><div class="h2" style="margin:0">Manage events</div><span class="chip">Coordinator only</span></div>'+
+ '<table style="margin-top:10px"><tr><th>Event</th><th>Date</th><th>Status</th><th></th></tr>'+EVENTS.map(function(e){return '<tr><td><b>'+e.name+'</b></td><td>'+e.date+'</td><td><span class="chip '+(e.status==="Active"?"g":"")+'">'+e.status+'</span></td><td class="row" style="margin:0;justify-content:flex-end"><button class="b" onclick="evEdit(\''+e.id+'\')">Edit</button>'+(S.evDel===e.id?'<button class="d" onclick="evDelete(\''+e.id+'\')">Confirm delete</button><button class="b" onclick="S.evDel=null;render()">Keep</button>':'<button class="b" onclick="S.evDel=\''+e.id+'\';render()">Delete</button>')+'</td></tr>'}).join("")+'</table>'+
+ '<div class="h2" style="margin-top:18px;font-size:14px">'+(f&&f.id?"Edit event":"Add an event")+'</div><div class="two"><label class="fl">Event name<input id="ev_name" value="'+(f?f.name:"")+'"></label><label class="fl">Date<input id="ev_date" value="'+(f?f.date:"")+'" placeholder="e.g. 12 Jan 2027"></label><label class="fl">Time zone<input id="ev_tz" value="'+(f?f.tz:"IST (UTC+5:30)")+'"></label><label class="fl">Registration link<input id="ev_link" value="'+(f?f.link:"")+'"></label></div>'+
+ '<label class="fl" style="margin-top:12px">Description<textarea id="ev_desc" style="min-height:60px">'+(f?f.desc:"")+'</textarea></label>'+
+ (S.evErr?'<div class="err">'+S.evErr+'</div>':'')+
+ '<div class="row" style="justify-content:flex-end">'+(f&&f.id?'<button class="b" onclick="S.evForm=null;render()">Cancel</button>':'')+'<button class="p" onclick="evSave()">'+(f&&f.id?"Save changes":"Add event")+'</button></div></div>'}
+function openEvent(id){saveActive();loadEvent(id);S.view="S2";S.scope="mine";S.sel={};render();toast("Opened "+evById(id).name)}
+function evEdit(id){var e=evById(id);S.evForm={id:id,name:e.name,date:e.date,tz:e.tz,link:e.link,desc:e.desc};S.evErr="";render()}
+function evSave(){
+ var name=(($("ev_name")||{}).value||"").trim(),date=(($("ev_date")||{}).value||"").trim(),tz=(($("ev_tz")||{}).value||"").trim(),link=(($("ev_link")||{}).value||"").trim(),desc=(($("ev_desc")||{}).value||"").trim();
+ if(!name){S.evErr="Event name is required.";render();return}
+ if(!date){S.evErr="Pick a date for the event.";render();return}
+ var f=S.evForm;
+ if(f&&f.id){var e=evById(f.id);e.name=name;e.date=date;e.tz=tz;e.link=link;e.desc=desc;toast("Event updated")}
+ else{var id="ev"+Date.now();EVENTS.push({id:id,name:name,date:date,tz:tz,link:link,desc:desc,status:"Active",data:blankEvent()});toast("Event added")}
+ S.evForm=null;S.evErr="";render();
+}
+function blankEvent(){return {rows:[],camps:[],groups:[],members:{},faq:[],faqDoc:null,sugSent:{},answered:{},answers:{},log:[],hist:{}}}
+function evDelete(id){if(ACTIVE===id){saveActive();ACTIVE=null}EVENTS=EVENTS.filter(function(e){return e.id!==id});S.evDel=null;render();toast("Event deleted")}
+
+/* ---------- login ---------- */
+function S1(){
+ var A=S.auth,em=A.email||"";
+ var head='<div style="text-align:center;margin-bottom:22px"><div class="logo" style="color:var(--ink);font-size:22px;justify-content:center">ORCA</div><div class="small" style="margin-top:6px">Event outreach, with people in control</div></div>';
+ var body;
+ if(A.mode==="forgot")body='<div class="h2" style="font-size:20px">Reset your password</div><p class="small">Enter your email and we will send a reset link.</p><div class="row"><input id="em" value="'+em+'" placeholder="Email" style="width:100%" oninput="S.auth.email=this.value;chkLogin()"></div>'+(A.err?'<div class="err">'+A.err+'</div>':'')+'<div class="row"><button class="p" id="signin" '+(validEmail(em)?"":"disabled")+' onclick="sendReset()" style="width:100%">Send reset link</button></div><div class="row" style="justify-content:center"><a href="#" onclick="S.auth.mode=\'login\';S.auth.err=\'\';render();return false">Back to sign in</a></div>';
+ else if(A.mode==="sent")body='<div class="tick">✓</div><div class="h2" style="text-align:center;margin-top:14px">Check your inbox</div><p class="small" style="text-align:center">A reset link is on its way to <b>'+em+'</b>.</p><div class="row" style="justify-content:center"><button class="b" onclick="S.auth.mode=\'login\';render()">Back to sign in</button></div>';
+ else body='<div class="h2" style="font-size:20px">Welcome back</div><p class="small">Choose an account to continue (demo accounts).</p><div class="row">'+USERS.map(function(u){return '<button class="chip '+(em===u.email?"on":"")+'" onclick="pickUser(\''+u.email+'\')">'+u.name+' · '+u.role+'</button>'}).join("")+'</div>'+
+  '<div class="row" style="margin-top:12px"><input id="em" value="'+em+'" placeholder="Email" style="width:100%" oninput="S.auth.email=this.value;chkLogin()"></div>'+
+  '<div class="row"><input id="pw" type="password" value="'+(A.pw||"")+'" placeholder="Password (any, in this demo)" style="width:100%" oninput="S.auth.pw=this.value;chkLogin()"></div>'+
+  (A.err?'<div class="err">'+A.err+'</div>':'')+'<div class="row" style="justify-content:space-between"><span class="small">Your role comes from your account.</span><a href="#" onclick="S.auth.mode=\'forgot\';S.auth.err=\'\';render();return false">Forgot password?</a></div>'+
+  '<div class="row" style="margin-top:14px"><button class="p" id="signin" '+((USERS.some(function(u){return u.email===em})&&A.pw)?"":"disabled")+' onclick="signIn()" style="width:100%">Sign in</button></div>';
+ return '<div class="login"><div class="box" style="max-width:420px;margin:48px auto;padding:34px">'+head+body+'</div></div>';
+}
+function pickUser(e){S.auth.email=e;S.auth.err="";render()}
+function chkLogin(){var b=$("signin");if(!b)return;var e=S.auth.email||"";if(S.auth.mode==="forgot"){b.disabled=!validEmail(e);return}b.disabled=!(USERS.some(function(u){return u.email===e})&&S.auth.pw)}
+function signIn(){var e=S.auth.email||"",u=USERS.filter(function(x){return x.email===e})[0];if(!u){S.auth.err="Pick one of the demo accounts above";render();return}if(!S.auth.pw){S.auth.err="Enter a password";render();return}
+ ME=u;S.user=u;S.role=u.role;S.loggedIn=true;S.view="S0";S.auth={mode:"login",err:"",show:false,email:e,pw:""};ACTIVE=null;render();toast("Signed in as "+u.name)}
+function signOut(){saveActive();ME=null;S.user=null;S.loggedIn=false;S.view="S1";ACTIVE=null;S.auth={mode:"login",err:"",show:false,email:"",pw:""};render();toast("Signed out")}
+
+/* ---------- dashboard (scoped to the signed-in person) ---------- */
+function S2(){
+ var team=isC()&&S.scope==="team";
+ if(team){
+  var T=TEAM_PEOPLE.reduce(function(a,p){for(var k in p)if(typeof p[k]==="number")a[k]=(a[k]||0)+p[k];return a},{});
+  return greet()+'<div class="grid kpis">'+kpi(IC.people,"Contacts",T.contacts.toLocaleString(),"Imported by all volunteers")+kpi(IC.send,"People messaged",T.sent,pct(T.delivered,T.sent)+"% delivered · "+T.failed+" failed")+kpi(IC.reply,"Replies",T.replies,pct(T.replies,T.delivered)+"% of delivered")+kpi(IC.star,"Interested",T.I,pct(T.I,T.replies)+"% of replies")+'</div>'+
+  '<div class="two"><div class="box"><div class="h2">Round 1 · all volunteers</div>'+ring(pct(T.delivered+T.failed,T.sent),T.delivered+" delivered · "+T.failed+" failed · "+T.queued+" queued")+'</div><div class="box"><div class="h2">Replies by intent</div>'+donut([["Interested",T.I],["Question",T.Q],["Undecided",T.U],["Declined",T.D],["Opted out",T.O]],T.replies)+'</div></div>'+
+  '<div class="box"><div class="h2">Per volunteer</div><table><tr><th>Name</th><th>Role</th><th>Contacts</th><th>Messaged</th><th>Replies</th><th>Interested</th><th>Questions</th><th>Undecided</th></tr>'+TEAM_PEOPLE.map(function(p){return "<tr><td><b>"+p.name+"</b></td><td>"+p.role+"</td><td>"+p.contacts+"</td><td>"+p.sent+"</td><td>"+p.replies+"</td><td>"+p.I+"</td><td>"+p.Q+"</td><td>"+p.U+"</td></tr>"}).join("")+'<tr class="tot"><td>Total</td><td></td><td>'+T.contacts+'</td><td>'+T.sent+'</td><td>'+T.replies+'</td><td>'+T.I+'</td><td>'+T.Q+'</td><td>'+T.U+'</td></tr></table></div>';
+ }
+ var sc=scopeRows();var ids={};sc.forEach(function(r){ids[r.id]=true});
+ var cams=S.camps.filter(function(c){return team||c.owner===ME.name});
+ var sent=0,fail=0,pend=0;var fl=[];
+ cams.forEach(function(c){c.ids.forEach(function(id){if(!ids[id])return;if((c.pending||[]).indexOf(id)>=0){pend++;return}sent++;if(c.fails.indexOf(id)>=0){fail++;fl.push({id:id,camp:c})}})});
+ var rp=sc.filter(function(r){return r.replied}).length,delv=sent-fail;
+ var qw=sc.filter(function(r){return r.replied&&r.st==="Q"&&!S.answered[r.id]}),ud=sc.filter(function(r){return r.replied&&r.st==="U"}),ready=sc.filter(function(r){return r.st==="I"});
+ var total=qw.length+ud.length+fl.length+ready.length;
+ var last=cams[cams.length-1];
+ var lastIds=last?last.ids.filter(function(i){return ids[i]}):[];var lastF=last?last.fails.filter(function(i){return ids[i]}).length:0;
+ var lastPct=lastIds.length?pct(lastIds.length-lastF-((last.pending||[]).filter(function(i){return ids[i]}).length),lastIds.length):0;
+ return greet()+'<div class="grid kpis">'+kpi(IC.people,"Contacts",sc.length,team?"Whole team":"Imported by you")+kpi(IC.send,"People messaged",sent,pct(delv,sent)+"% delivered · "+fail+" failed")+kpi(IC.reply,"Replies",rp,pct(rp,delv)+"% of delivered")+kpi(IC.star,"Interested",sc.filter(function(r){return r.st==="I"}).length,"incl. people you marked")+'</div>'+
+ '<div class="two">'+(last?'<div class="box"><div class="h2">'+last.name+'</div><div class="sub">'+lastIds.length+' people · '+last.when+'</div>'+ring(lastPct,(lastIds.length-lastF)+" delivered · "+lastF+" failed")+'<div class="row"><button class="b" onclick="go(\'S11\')">View progress</button></div></div>':'<div class="box"><div class="h2">Campaigns</div>'+empty("No campaign yet","Send your first campaign from New campaign.")+'</div>')+
+ '<div class="box"><div class="h2">Replies by intent</div>'+donut([["Interested",sc.filter(function(r){return r.replied&&r.st==="I"}).length],["Question",sc.filter(function(r){return r.replied&&r.st==="Q"}).length],["Undecided",ud.length],["Declined",sc.filter(function(r){return r.replied&&r.st==="D"}).length],["Opted out",sc.filter(function(r){return r.replied&&r.st==="O"}).length]],rp)+'</div></div>'+
+ '<div class="box"><div class="row" style="justify-content:space-between"><div class="h2" style="margin:0">Needs attention</div><span class="chip '+(total?"a":"g")+'">'+total+' open</span></div>'+
+ (total?attRow(qw.length+" questions waiting for an answer",qw,"",function(id){return "openReply("+id+")"},"Answer","questions")+attRow(ud.length+" undecided replies need a label",ud,"",function(id){return "openReply("+id+")"},"Label","undecided")+attRow(fl.length+" messages failed",fl.map(function(f){return R(f.id)}),"",function(){return "go('S11')"},"Retry","failed")+attRow(ready.length+" interested people ready for a follow-up",ready,"",null,"Create follow-up","ready"):empty("Nothing needs you right now","Every reply has an answer or a label, and every message has been delivered."))+'</div>';
+}
+function startFollowUp(){S.aud={type:"group",key:"interested"};S.ch=null;toast("Audience set to Interested participants");go("S8")}
+
+/* ---------- Excel / CSV import (real files) ---------- */
+function readSheet(file,cb){
+ var name=file.name.toLowerCase(),fr=new FileReader();
+ if(/\.csv$/.test(name)){fr.onload=function(){cb(null,csvRows(fr.result))};fr.readAsText(file);return}
+ if(/\.xlsx?$/.test(name)){
+  if(typeof XLSX==="undefined"){cb("Excel reading isn’t available in this preview. Save the file as CSV and upload that instead.");return}
+  fr.onload=function(){try{var wb=XLSX.read(fr.result,{type:"array"});var ws=wb.Sheets[wb.SheetNames[0]];cb(null,XLSX.utils.sheet_to_json(ws,{header:1,defval:""}))}catch(err){cb("This file could not be read: "+err.message)}};fr.readAsArrayBuffer(file);return}
+ cb("Please upload an Excel (.xlsx) or CSV (.csv) file.");
+}
+function csvRows(t){return t.split(/\r?\n/).filter(function(l){return l.trim()}).map(function(l){return l.split(",").map(function(c){return c.replace(/^"|"$/g,"").trim()})})}
+function mapCols(head){var h=head.map(function(x){return String(x||"").toLowerCase().trim()});function f(re){return h.findIndex(function(x){return re.test(x)})}return {name:f(/^name|full name|participant/),phone:f(/phone|mobile|whatsapp|contact no/),email:f(/mail/),college:f(/college|university|clg|institute/),source:f(/source/)}}
+function analyse(table){
+ var head=table[0]||[],map=mapCols(head);
+ var data=table.slice(1).filter(function(r){return r.some(function(c){return String(c).trim()!==""})});
+ var seenPh={},seenEm={};rows.forEach(function(r){if(r.ph)seenPh[digitsPh(r.ph)]=1;if(r.em)seenEm[r.em.toLowerCase()]=1});
+ var recs=[];
+ data.forEach(function(r,i){
+  var rec={line:i+2,name:String(r[map.name]||"").trim(),phone:digitsPh(r[map.phone]),email:String(r[map.email]||"").trim(),college:String(r[map.college]||"").trim(),issue:null,match:""};
+  if(!rec.name){rec.issue="name"}
+  else if(rec.phone&&seenPh[rec.phone]){rec.issue="dup";rec.match=rows.filter(function(x){return digitsPh(x.ph)===rec.phone})[0]?rows.filter(function(x){return digitsPh(x.ph)===rec.phone})[0].name:"a contact already in this file"}
+  else if(rec.email&&seenEm[rec.email.toLowerCase()]){rec.issue="dup";rec.match=rows.filter(function(x){return x.em&&x.em.toLowerCase()===rec.email.toLowerCase()})[0]?rows.filter(function(x){return x.em&&x.em.toLowerCase()===rec.email.toLowerCase()})[0].name:"a contact already in this file"}
+  else if(rec.phone.length!==10){rec.issue="ph"}
+  if(rec.phone&&!rec.issue)seenPh[rec.phone]=1;if(rec.email&&!rec.issue)seenEm[rec.email.toLowerCase()]=1;
+  recs.push(rec);
+ });
+ var issues=[];recs.forEach(function(rec,i){if(rec.issue)issues.push({k:"i"+i,rec:rec})});
+ return {total:data.length,map:map,recs:recs,issues:issues,cols:head.filter(function(x){return String(x).trim()}).length};
+}
+function fileLoaded(f){
+ S.imp.file={name:f.name,total:0};S.imp.error="";S.imp.dec={};S.imp.fixed={};S.imp.consent=false;
+ readSheet(f,function(err,table){
+  if(err){S.imp.file=null;S.imp.error=err;render();return}
+  if(!table.length){S.imp.file=null;S.imp.error="The file is empty.";render();return}
+  var a=analyse(table);S.imp.file={name:f.name,total:a.total,cols:a.cols,map:a.map};S.imp.recs=a.recs;S.imp.issues=a.issues;
+  render();
+ });
+}
+function impIssues(){return S.imp.issues||[]}
+function impCounts(){
+ var iss=impIssues(),total=S.imp.file?S.imp.file.total:0,merged=0,skipped=0,keep=0,decided=0;
+ iss.forEach(function(x){var d=S.imp.dec[x.k];if(!d)return;decided++;if(d==="merge")merged++;else if(d==="skip")skipped++;else keep++});
+ var ready=total-iss.length;
+ return {ready:ready,left:iss.length-decided,decided:decided,merged:merged,skipped:skipped,imported:ready+keep,total:total};
+}
+function fixPhone(k){var v=digitsPh((($("fx_"+k)||{}).value||""));S.imp.fixErr=S.imp.fixErr||{};if(v.length!==10){S.imp.fixErr[k]="A phone number needs exactly 10 digits. This has "+v.length+".";render();return}S.imp.dec[k]="fix";S.imp.fixed=S.imp.fixed||{};S.imp.fixed[k]=v;delete S.imp.fixErr[k];render();toast("Number saved")}
+function commitImport(){
+ var c=impCounts();var added=[];var nid=rows.reduce(function(m,x){return Math.max(m,x.id)},0)+1;
+ S.imp.recs.forEach(function(rec,i){
+  var k="i"+i,issue=rec.issue,d=S.imp.dec[k];
+  var take=!issue||(issue==="ph"&&(d==="fix"||d==="keep"))||(issue==="dup"&&d==="keep");
+  if(!take)return;
+  var phone=issue==="ph"&&d==="fix"?S.imp.fixed[k]:rec.phone;
+  var em=rec.email||"";var reach=phone&&phone.length===10&&em?"B":phone&&phone.length===10?"W":em?"E":"N";
+  var r={replied:false,id:nid,name:rec.name,col:rec.college,reach:reach,st:"-",fail:false,conf:0,time:"",txt:"",photo:false,topic:"",opt:false,excl:false,owner:ME.name,ph:phone&&phone.length===10?"+91 "+phone:"",em:em};
+  rows.push(r);added.push(nid);nid++;
+ });
+ S.imp.added=added;S.imp.done=true;logEv("Import","Imported "+added.length+" contacts from "+S.imp.file.name+" by "+ME.name);render();toast("Imported "+added.length+" contacts");
+}
+function undoImport(){var ids=S.imp.added||[];rows=rows.filter(function(r){return ids.indexOf(r.id)<0});logEv("Undo","Undid import of "+ids.length+" contacts");S.imp={file:null,issues:[],dec:{},fixed:{},consent:false,done:false,added:[]};S.view="S4";render();toast("Import undone")}
+function makeTemplate(){
+ var head=["Name","Phone","Email","College","Source"],ex=[["Rahul Sharma","9840012345","rahul@iitm.ac.in","IIT Madras","Friend"],["Priya Nair","9962055512","priya.n@gmail.com","NIT Trichy","Club list"]];
+ if(typeof XLSX!=="undefined"){var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([head].concat(ex)),"Contacts");XLSX.writeFile(wb,"orca_contacts_template.xlsx");toast("Template downloaded");return}
+ var csv=[head].concat(ex).map(function(r){return r.join(",")}).join("\n");
+ try{var a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);a.download="orca_contacts_template.csv";document.body.appendChild(a);a.click();a.remove()}catch(err){}
+ toast("Template downloaded as CSV");
+}
+function formatTable(){return tbl2(["Column","Required?","What to put in it","Example"],[["Name","Yes","Full name of the person","Rahul Sharma"],["Phone","Yes","10 digits, no country code","9840012345"],["Email","No","A valid email address","rahul@iitm.ac.in"],["College","No","College or university name","IIT Madras"],["Source","No","Where the contact came from","Friend"]])}
+function tbl2(head,rs){return '<table><tr>'+head.map(function(h){return '<th>'+h+'</th>'}).join("")+'</tr>'+rs.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>'}).join("")+'</tr>'}).join("")+'</table>'}
+function S4(){
+ var f=S.imp.file;
+ return '<h1>Import contacts</h1>'+steps(["Upload","Check and fix","Review and import"],0)+
+ '<div class="box"><div class="row" style="justify-content:space-between"><div class="h2" style="margin:0">Excel format</div><button class="b" onclick="makeTemplate()">Download template</button></div><p class="small">Use one row per person, with the column names below in the first row. Excel (.xlsx) or CSV (.csv).</p>'+formatTable()+'</div>'+
+ '<div class="box"><div class="drop">'+(f?'<div class="h2" style="margin:0">'+f.name+'</div><p>'+f.total+' rows · '+f.cols+' columns found</p><span class="chip g">Columns matched automatically</span>':'<div class="h2" style="margin:0">Drop an Excel or CSV file here</div><p>.xlsx or .csv</p><label class="b" style="cursor:pointer;display:inline-block">Choose file<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="if(this.files[0])fileLoaded(this.files[0])"></label>')+'</div>'+(S.imp.error?'<div class="err">'+S.imp.error+'</div>':'')+
+ '<div class="row" style="justify-content:space-between;margin-top:16px"><span class="small">Imported contacts become yours.</span><button class="p" '+(f?"":"disabled")+' onclick="go(\'S5\')">Continue</button></div></div>';
+}
+function S5(){
+ if(!S.imp.file)return S4();
+ var c=impCounts();
+ var rowsHTML=impIssues().map(function(x){
+  var rec=x.rec,d=S.imp.dec[x.k];
+  var label=rec.name||"(no name)";
+  var head='<div class="row" style="justify-content:space-between;margin:0"><div><b>Row '+rec.line+' · '+label+'</b> <span class="small">'+({name:"Name is missing",dup:"Looks like "+rec.match,ph:"Phone number needs 10 digits"+(rec.phone?" (you have "+rec.phone.length+")":" (missing)")})[x.rec.issue]+'</span></div>'+(d?'<span class="chip g">'+({merge:"Merged",keep:"Kept",skip:"Skipped",fix:"Number fixed"})[d]+'</span>':'<span class="chip a">Needs a decision</span>')+'</div>';
+  if(rec.issue==="name")return '<div class="iss">'+head+'<div class="row" style="margin:10px 0 0"><button class="'+(d==="skip"?"p":"b")+'" onclick="S.imp.dec[\''+x.k+'\']=\'skip\';render()">Skip row</button></div></div>';
+  if(rec.issue==="dup")return '<div class="iss">'+head+'<div class="row" style="margin:10px 0 0">'+[["merge","Merge into existing"],["keep","Keep both"],["skip","Skip row"]].map(function(q){return '<button class="'+(d===q[0]?"p":"b")+'" onclick="S.imp.dec[\''+x.k+'\']=\''+q[0]+'\';render()">'+q[1]+'</button>'}).join("")+'</div></div>';
+  var err=(S.imp.fixErr||{})[x.k],fixed=(S.imp.fixed||{})[x.k];
+  return '<div class="iss">'+head+(d==="fix"?'<div class="small" style="margin-top:6px">Saved number: <b>'+fixed+'</b></div>':'<div class="row" style="margin:10px 0 0"><input id="fx_'+x.k+'" inputmode="numeric" placeholder="10-digit number" value="'+(fixed||rec.phone||"")+'" style="width:230px"><button class="p" onclick="fixPhone(\''+x.k+'\')">Save number</button><button class="b" onclick="S.imp.dec[\''+x.k+'\']=\'keep\';render()">Import without phone</button><button class="b" onclick="S.imp.dec[\''+x.k+'\']=\'skip\';render()">Skip row</button></div>'+(err?'<div class="err">'+err+'</div>':''))+'</div>';
+ }).join("");
+ return '<h1>Import contacts</h1>'+steps(["Upload","Check and fix","Review and import"],1)+
+ '<div class="grid" style="margin-bottom:16px"><div class="stat"><div class="lbl">Ready</div><div class="num">'+c.ready+'</div><div class="sub">no problems</div></div><div class="stat"><div class="lbl">Need a decision</div><div class="num">'+c.left+'</div><div class="sub">choose below</div></div><div class="stat"><div class="lbl">Decided</div><div class="num">'+c.decided+'</div><div class="sub">of '+impIssues().length+'</div></div></div>'+
+ (impIssues().length?'<div class="box"><div class="h2">Rows to decide</div>'+rowsHTML+'</div>':'<div class="box">'+empty("No problems found","All rows are ready to import.")+'</div>')+
+ '<div class="row" style="justify-content:space-between"><button class="b" onclick="go(\'S4\')">Back</button><button class="p" '+(c.left?"disabled":"")+' onclick="go(\'S6\')">'+(c.left?"Decide "+c.left+" more to continue":"Continue")+'</button></div>';
+}
+function S6(){
+ if(!S.imp.file)return S4();
+ var c=impCounts();
+ if(S.imp.done)return '<h1>Import contacts</h1>'+steps(["Upload","Check and fix","Review and import"],2)+'<div class="box" style="text-align:center;padding:42px"><div class="tick">✓</div><div class="h2" style="font-size:22px;margin-top:14px">'+(S.imp.added||[]).length+' contacts imported</div><p class="small">'+c.merged+' merged into an existing contact · '+c.skipped+' skipped · Undo is available</p><div class="row" style="justify-content:center"><button class="b" onclick="undoImport()">Undo import</button><button class="p" onclick="go(\'S3\')">See contacts</button></div></div>';
+ return '<h1>Import contacts</h1>'+steps(["Upload","Check and fix","Review and import"],2)+
+ '<div class="grid" style="margin-bottom:16px"><div class="stat"><div class="lbl">Will be imported</div><div class="num">'+c.imported+'</div></div><div class="stat"><div class="lbl">Merged</div><div class="num">'+c.merged+'</div></div><div class="stat"><div class="lbl">Skipped</div><div class="num">'+c.skipped+'</div></div></div>'+
+ '<div class="box"><div class="small">'+c.total+' rows in the file − '+c.merged+' merged − '+c.skipped+' skipped = '+(c.total-c.merged-c.skipped)+' rows, of which '+c.imported+' are new contacts.</div><label style="margin-top:14px"><input type="checkbox" '+(S.imp.consent?"checked":"")+' onchange="S.imp.consent=this.checked;render()"> These people agreed to be contacted by the event team</label></div>'+
+ '<div class="row" style="justify-content:space-between"><button class="b" onclick="go(\'S5\')">Back</button><button class="p" '+(S.imp.consent&&!c.left?"":"disabled")+' onclick="commitImport()">Import '+c.imported+' contacts</button></div>';
+}
+
+/* ---------- campaigns: owner, delete ---------- */
+function S7(){
+ var list=S.camps.filter(function(c){return isC()||S.scope!=="team"||true});
+ return '<h1>Campaigns</h1>'+'<div class="row" style="justify-content:space-between"><div class="small">'+S.camps.length+' campaigns in '+evById(ACTIVE).name+'</div><button class="p" onclick="newCampaign()">+ New campaign</button></div>'+
+ (S.camps.length?'<div class="box"><table><tr><th>Campaign</th><th>Owner</th><th>Channels</th><th>People</th><th>Delivered</th><th>Failed</th><th>Queued</th><th>Status</th><th></th></tr>'+
+ S.camps.map(function(c){var st=c.state==="done"?"Done":c.state==="paused"?"Paused":c.state==="stopped"?"Stopped":"Sending";var cls=st==="Done"?"":st==="Sending"?"g":"a";var mine=canEdit(c.owner);
+  return '<tr><td style="cursor:pointer" onclick="S.prog=\''+c.id+'\';go(\'S11\')"><b>'+c.name+'</b><div class="small">'+c.when+'</div></td><td class="small">'+(c.owner||"")+'</td><td><span class="chip bl">'+c.ch+'</span></td><td>'+c.ids.length+'</td><td>'+cDel(c)+'</td><td>'+c.fails.length+'</td><td>'+(c.pending||[]).length+'</td><td><span class="chip '+cls+'">'+st+'</span></td><td>'+(mine?(S.campDel===c.id?'<button class="d" onclick="deleteCamp(\''+c.id+'\')">Confirm</button>':'<button class="b" onclick="S.campDel=\''+c.id+'\';render()">Delete</button>'):'')+'</td></tr>'}).join("")+'</table></div>':'<div class="box">'+empty("No campaigns yet","Start one with New campaign: Audience, then Message, then Check and send.")+'</div>')}
+function deleteCamp(id){var c=S.camps.filter(function(x){return x.id===id})[0];if(!canEdit(c.owner)){toast("Only "+c.owner+" can delete this campaign");return}S.camps=S.camps.filter(function(x){return x.id!==id});S.campDel=null;logEv("Delete","Campaign “"+c.name+"” deleted by "+ME.name);render();toast("Campaign deleted")}
+function sendNow(){
+ var r=audStats(S.aud,S.ch);var ids=r.receive.map(function(x){return x.id});
+ S.camps.push({id:"C"+Date.now(),name:audLabel(S.aud),ch:S.ch,ids:ids,fails:[],pending:ids.slice(),state:"sending",when:"now",owner:ME.name});
+ logEv("Send",ids.length+" messages queued · "+audLabel(S.aud)+" · "+S.ch);
+ S.aud=null;S.ch=null;S.checked=false;S.typed="";S.sendI=0;S.prog=S.camps[S.camps.length-1].id;go("S11");toast("Campaign queued (test mode)");
+}
+function togglePause(cid){var c=S.camps.filter(function(x){return x.id===cid})[0];if(!canEdit(c.owner)){toast("Only "+c.owner+" can change this campaign");return}if(c.state==="sending"){c.state="paused";toast("Paused")}else if(c.state==="paused"){c.state="sending";toast("Resumed")}render()}
+function advance(cid,n){var c=S.camps.filter(function(x){return x.id===cid})[0];if(!c||!canEdit(c.owner)){toast("Only "+(c?c.owner:"the owner")+" can send this campaign");return}if(c.state==="paused"||c.state==="stopped"||c.state==="done")return;var take=c.pending.splice(0,n);if(!take.length){c.state="done";render();return}logEv("Send",take.length+" messages sent · "+c.name);if(!c.pending.length){c.state="done";logEv("Done",c.name+" finished")}render();toast(take.length+" messages sent")}
+function stopCamp(cid){var c=S.camps.filter(function(x){return x.id===cid})[0];if(!canEdit(c.owner)){toast("Only "+c.owner+" can stop this campaign");return}var left=c.pending.length;c.pending=[];c.state="stopped";logEv("Stop",c.name+" stopped. "+left+" not sent.");render();toast("Stopped. "+left+" not sent")}
+
+/* ---------- FAQ: one document per event, edit and delete every entry ---------- */
+function S14(){
+ var coord=isC();
+ var entries=S.faq;
+ return '<h1>FAQ & auto-reply</h1>'+
+ '<div class="grid" style="margin-bottom:16px">'+stat("Approved",entries.filter(function(f){return f.status==="Approved"}).length,"ready to suggest")+stat("Drafts",entries.filter(function(f){return f.status!=="Approved"}).length,"need approval")+stat("Sent from FAQ",Object.keys(S.sugSent).reduce(function(a,k){return a+S.sugSent[k]},0),"times")+'</div>'+
+ '<div class="box"><div class="row" style="justify-content:space-between"><div><div class="h2" style="margin:0">Event FAQ document</div><div class="small">'+(S.faqDoc?S.faqDoc.name+' · '+S.faqDoc.count+' questions · uploaded '+S.faqDoc.when:'No document uploaded for this event yet')+'</div></div>'+
+ (coord?'<label class="b" style="cursor:pointer">Upload document<input type="file" accept=".xlsx,.csv" style="display:none" onchange="if(this.files[0])faqDocUpload(this.files[0])"></label>':'<span class="chip">Coordinators only</span>')+'</div>'+
+ '<p class="small" style="margin-top:10px">Upload an Excel or CSV file with the columns <b>Question</b> and <b>Answer</b>. Each upload replaces the previous document’s questions. Word and PDF files can’t be read in this demo.</p>'+(S.faqErr?'<div class="err">'+S.faqErr+'</div>':'')+'</div>'+
+ '<div class="box"><div class="h2">Add a question and answer</div><div class="row"><input id="fq" placeholder="Question" style="flex:1"></div><div class="row"><textarea id="fa" style="min-height:64px" placeholder="Answer (official information only)"></textarea></div><div class="row" style="justify-content:space-between"><span class="small">Saved as a draft. Only a coordinator can approve it.</span><button class="p" onclick="addFaq()">Save as draft</button></div></div>'+
+ '<div class="box"><table><tr><th>Question</th><th>Answer</th><th>Source</th><th>Status</th><th>Used</th><th></th></tr>'+entries.map(function(f){
+   var mine=f.source==="site"?(canEdit(f.owner)):coord;
+   if(S.faqEdit===f.id)return '<tr><td colspan="6"><div class="row"><input id="eq_'+f.id+'" value="'+f.q.replace(/"/g,"&quot;")+'" style="flex:1"></div><div class="row"><textarea id="ea_'+f.id+'" style="min-height:56px">'+f.a+'</textarea></div><div class="row" style="justify-content:flex-end"><button class="b" onclick="S.faqEdit=null;render()">Cancel</button><button class="p" onclick="saveFaq(\''+f.id+'\')">Save</button></div></td></tr>';
+   return '<tr><td><b>'+f.q+'</b></td><td class="small">'+f.a+'</td><td><span class="chip">'+(f.source==="doc"?"Document":"Added on site")+'</span></td><td>'+(f.status==="Approved"?'<span class="chip g">Approved</span>':'<span class="chip">Draft</span>')+'</td><td>'+(f.topic&&S.sugSent[f.topic]?S.sugSent[f.topic]:0)+'</td><td class="row" style="margin:0;justify-content:flex-end">'+
+    (f.status!=="Approved"?'<button class="b '+(coord?"":"lock")+'" '+(coord?"":"disabled")+' onclick="approveFaq(\''+f.id+'\')">Approve</button>':'')+
+    '<button class="b"'+(mine?"":" disabled")+' onclick="S.faqEdit=\''+f.id+'\';render()">Edit</button>'+
+    (S.faqDel===f.id?'<button class="d" onclick="deleteFaq(\''+f.id+'\')">Confirm</button>':'<button class="b"'+(mine?"":" disabled")+' onclick="S.faqDel=\''+f.id+'\';render()">Delete</button>')+'</td></tr>'}).join("")+'</table>'+
+ '<div class="small" style="margin-top:10px">'+(coord?"You can approve answers.":"Only coordinators approve answers. You can edit and delete the answers you added.")+'</div></div>'+
+ '<div class="box"><div class="h2">Auto-reply</div><div class="small">Off by default. When off, ORCA only suggests approved answers and you press Approve and send.</div><div class="row"><button class="'+(coord?"p":"b lock")+'" '+(coord?"":"disabled")+' onclick="toggleAuto()">'+(S.auto?"Switch off":"Switch on")+'</button><span class="chip '+(S.auto?"g":"")+'">'+(S.auto?"On":"Off")+'</span>'+(coord?"":'<span class="small">Coordinators only</span>')+'</div></div>';
+}
+function faqDocUpload(f){readSheet(f,function(err,table){if(err){S.faqErr=err;render();return}
+ var h=(table[0]||[]).map(function(x){return String(x).toLowerCase()});var qi=h.findIndex(function(x){return /question/.test(x)}),ai=h.findIndex(function(x){return /answer/.test(x)});
+ if(qi<0||ai<0){S.faqErr="The file needs a Question column and an Answer column.";render();return}
+ var add=table.slice(1).filter(function(r){return String(r[qi]||"").trim()}).map(function(r,i){return {id:"d"+Date.now()+"_"+i,q:String(r[qi]).trim(),a:String(r[ai]||"").trim(),topic:"",status:"Draft",source:"doc",owner:"document"}});
+ S.faq=S.faq.filter(function(x){return x.source!=="doc"}).concat(add);S.faqDoc={name:f.name,count:add.length,when:"today"};S.faqErr="";logEv("FAQ","Document “"+f.name+"” uploaded: "+add.length+" questions");render();toast(add.length+" questions loaded from the document")})}
+function addFaq(){var q=($("fq").value||"").trim(),a=($("fa").value||"").trim();if(!q||!a){toast("Add both a question and an answer");return}S.faq.push({id:"s"+Date.now(),q:q,a:a,topic:"",status:"Draft",source:"site",owner:ME.name});logEv("FAQ","Draft added by "+ME.name+": "+q);render();toast("Saved as draft")}
+function canEditFaq(f){return f.source==="site"?canEdit(f.owner):isC()}
+function saveFaq(id){var f=S.faq.filter(function(x){return x.id===id})[0];if(!canEditFaq(f)){toast("You can’t change this entry");return}var q=($("eq_"+id).value||"").trim(),a=($("ea_"+id).value||"").trim();if(!q||!a){toast("Question and answer can’t be empty");return}f.q=q;f.a=a;S.faqEdit=null;logEv("FAQ","Entry edited: "+q);render();toast("Saved")}
+function approveFaq(id){if(!isC()){toast("Only coordinators can approve");return}var f=S.faq.filter(function(x){return x.id===id})[0];f.status="Approved";logEv("FAQ","Approved for use: "+f.q);render();toast("Approved")}
+function deleteFaq(id){var f=S.faq.filter(function(x){return x.id===id})[0];if(!canEditFaq(f)){toast("You can’t delete this entry");return}S.faq=S.faq.filter(function(x){return x.id!==id});S.faqDel=null;logEv("FAQ","Entry deleted: "+f.q);render();toast("Deleted")}
+
+// SCREENS 3 AND SHELL: settings pages (event setup, team, channels), the sidebar, render, and startup (boot).
+/* ---------- settings ---------- */
+function S16(){var e=evById(ACTIVE);return '<h1>Event setup</h1>'+'<div class="box"><div class="two">'+[["Event name",e.name],["Date",e.date],["Time zone",e.tz],["Registration link",e.link]].map(function(x){return '<div><div class="lbl">'+x[0]+'</div><div style="font-weight:700;margin-top:4px">'+x[1]+'</div></div>'}).join("")+'</div><div class="small" style="margin-top:14px">'+e.desc+'</div><div class="row" style="margin-top:14px">'+(isC()?'<button class="b" onclick="evEdit(\''+e.id+'\');go(\'S0\')">Edit on the Events page</button>':'<span class="chip">Only coordinators can edit event details</span>')+'</div></div>'+
+ '<div class="box"><div class="h2">Quiet hours</div><div class="small">No messages are sent between 9 PM and 8 AM.</div></div>'}
+function S17(){
+ var f=S.userForm;
+ return '<h1>Team</h1>'+'<div class="box"><div class="row" style="justify-content:space-between"><div class="small">'+USERS.length+' people in ORCA. Each one signs in with their own account.</div>'+(isC()?'<button class="p" onclick="S.userForm={id:null,name:\'\',email:\'\',role:\'Volunteer\'};render()">+ Add person</button>':'<span class="chip">Coordinators only</span>')+'</div>'+
+ '<table style="margin-top:10px"><tr><th>Name</th><th>Email</th><th>Role</th><th>Contacts in '+evById(ACTIVE).name+'</th><th></th></tr>'+USERS.map(function(u,i){var n=rows.filter(function(r){return r.owner===u.name}).length;return '<tr><td><b>'+u.name+'</b>'+(ME&&ME.email===u.email?' <span class="chip">You</span>':'')+'</td><td class="small">'+u.email+'</td><td>'+(isC()?'<select onchange="setUserRole('+i+',this.value)">'+["Volunteer","Coordinator"].map(function(r){return '<option '+(u.role===r?"selected":"")+'>'+r+'</option>'}).join("")+'</select>':u.role)+'</td><td>'+n+'</td><td class="row" style="margin:0;justify-content:flex-end">'+(isC()?'<button class="b" onclick="S.userForm={id:'+i+',name:\''+u.name+'\',email:\''+u.email+'\',role:\''+u.role+'\'};render()">Edit</button>'+(S.userDel===i?'<button class="d" onclick="deleteUser('+i+')">Confirm</button>':'<button class="b" onclick="S.userDel='+i+';render()" '+(ME&&ME.email===u.email?"disabled":"")+'>Delete</button>'):'')+'</td></tr>'}).join("")+'</table></div>'+
+ (f?'<div class="box"><div class="h2">'+(f.id!==null?"Edit person":"Add a person")+'</div><div class="two"><label class="fl">Name<input id="u_name" value="'+f.name+'"></label><label class="fl">Email<input id="u_email" value="'+f.email+'"></label><label class="fl">Role<select id="u_role">'+["Volunteer","Coordinator"].map(function(r){return '<option '+(f.role===r?"selected":"")+'>'+r+'</option>'}).join("")+'</select></label></div><div class="row" style="justify-content:flex-end"><button class="b" onclick="S.userForm=null;render()">Cancel</button><button class="p" onclick="saveUser()">Save</button></div></div>':'')+
+ '<div class="box"><div class="h2">What each role can do</div><div class="two"><div><div class="lbl">Volunteer</div><p class="small" style="margin-top:8px">See every event and all of its data. Import, message and reply, and change only the contacts and replies they own.</p></div><div><div class="lbl">Coordinator</div><p class="small" style="margin-top:8px">Everything a volunteer does, plus add, edit and delete events, manage the team, approve FAQ answers, switch auto-reply on, and change any contact.</p></div></div></div>'}
+function setUserRole(i,v){var u=USERS[i];u.role=v;if(ME&&ME.email===u.email){ME.role=v;S.role=v}logEv("Team",u.name+" is now "+v);render();toast(u.name+" is now "+v)}
+function saveUser(){var n=(($("u_name")||{}).value||"").trim(),e=(($("u_email")||{}).value||"").trim(),r=(($("u_role")||{}).value||"Volunteer");if(!n||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){toast("Enter a name and a valid email");return}var f=S.userForm;if(f.id!==null){var u=USERS[f.id];u.name=n;u.email=e;u.role=r}else USERS.push({name:n,email:e,role:r});S.userForm=null;render();toast("Saved")}
+function deleteUser(i){var u=USERS[i];if(ME&&ME.email===u.email){toast("You can’t delete your own account");return}USERS.splice(i,1);S.userDel=null;render();toast("Removed "+u.name)}
+function S18(){return '<h1>Channels & privacy</h1>'+'<div class="two"><div class="box"><div class="h2">Channels</div><div class="row" style="justify-content:space-between"><b>WhatsApp</b><span class="chip g">Mock · active</span></div><div class="row" style="justify-content:space-between"><b>Email</b><span class="chip g">Mock · active</span></div><div class="row" style="margin-top:14px"><label><input type="checkbox" '+(S.testMode!==false?"checked":"")+' '+(isC()?"":"disabled")+' onchange="S.testMode=this.checked;render()"> Test mode (banner on every page)</label></div><div class="small">Speed limit: 60 messages a minute. Real providers are not connected until Phase 5.</div></div>'+
+ '<div class="box"><div class="h2">Data retention</div><div class="small">Contact data is kept for 12 months after the event (open decision). Opted-out people stay on the do-not-contact list.</div></div></div>'}
+
+/* ---------- shell ---------- */
+function sectionOf(v){return {S0:"Events",S2:"Overview",S3:"Contacts",S4:"Contacts",S5:"Contacts",S6:"Contacts",S7:"Campaigns",S8:"Campaigns",S9:"Campaigns",S10:"Campaigns",S11:"Campaigns",S12:"Organise",S13:"Replies",S14:"Replies",S15:"Organise",S16:"Settings",S17:"Settings",S18:"Settings"}[v]||""}
+function nav(){
+ var ev=evById(ACTIVE);
+ var top='<button class="'+(S.view==="S0"?"on":"")+'" onclick="go(\'S0\')">All events</button>';
+ var G=[];
+ if(ev)G=[["Overview",[["S2","Dashboard"]]],["Contacts",[["S3","Contacts"],["S4","Import Excel"]]],["Campaigns",[["S7","All campaigns"],["S8","New campaign"]]],["Replies",[["S13","Inbox"],["S14","FAQ & auto-reply"]]],["Organise",[["S12","Groups"],["S15","Activity log"]]],["Settings",[["S16","Event setup"],["S17","Team"],["S18","Channels & privacy"]]]];
+ var box=ev?'<div class="evbox"><div class="small">Working in</div><div class="evname">'+ev.name+'</div><button class="b" style="width:100%;margin-top:8px" onclick="go(\'S0\')">Change event</button></div>':'';
+ $("nav").innerHTML=box+'<h3>Events</h3>'+top+G.map(function(g){return "<h3>"+g[0]+"</h3>"+g[1].map(function(x){return '<button class="'+(S.view===x[0]?"on":"")+'" onclick="go(\''+x[0]+'\')">'+x[1]+"</button>"}).join("")}).join("")+
+ '<div class="navfoot"><div class="me"><span class="av">'+ME.name.split(" ").map(function(p){return p[0]}).join("").slice(0,2)+'</span><div><div class="mn1">'+ME.name+'</div><div class="small">'+ME.role+'</div></div></div><button class="so" onclick="signOut()">Sign out</button></div>';
+}
+function panelOverlay(){var r=S.cpanel?R(S.cpanel):null;return r?'<div class="scrim" onclick="closePanel()"></div><aside class="pn">'+panelHTML(r)+'</aside>':""}
+var SCREENS={S0:S0,S1:S1,S2:S2,S3:S3,S4:S4,S5:S5,S6:S6,S7:S7,S8:S8,S9:S9,S10:S10,S11:S11,S12:S12,S13:S13,S14:S14,S15:S15,S16:S16,S17:S17,S18:S18};
+function render(){
+ var m=$("main"),keep=m.scrollTop,inApp=!!(S.loggedIn&&ME);
+ if(inApp&&!ACTIVE&&S.view!=="S0"&&S.view!=="S17"&&S.view!=="S18")S.view="S0";
+ if(inApp&&ACTIVE)TEAM_PEOPLE=computeTeam();
+ $("testPill").style.display=S.testMode===false?"none":"";
+ var ev=inApp&&ACTIVE?evById(ACTIVE):null;
+ document.querySelector(".ev").textContent=ev?(ev.name+" · "+ev.date):"";
+ $("rolebar").innerHTML=(inApp?roleSeg():"")+'<button class="theme" onclick="toggleTheme()" title="Switch light and dark">'+(S.dark?"☀ Light":"☾ Dark")+'</button>';
+ if(inApp)nav();else $("nav").innerHTML="";
+ $("nav").style.display=inApp?"":"none";
+ m.style.padding=inApp?"":"0";
+ m.innerHTML=(inApp&&S.view!=="S0"&&ACTIVE?'<div class="eyebrow">'+sectionOf(S.view)+'</div>':'')+(!inApp?S1:(SCREENS[S.view]||S0))();
+ m.scrollTop=keep;
+ $("overlay").innerHTML=(inApp&&S.view==="S3")?panelOverlay():"";
+ persist();
+}
+function toggleTheme(){S.dark=!S.dark;document.documentElement.setAttribute('data-theme',S.dark?'dark':'light');render()}
+/* ---------- start ---------- */
+boot();
+render();
+
+</script></body></html>
